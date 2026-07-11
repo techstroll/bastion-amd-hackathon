@@ -25,7 +25,12 @@ _SENSITIVE_KEYWORDS = re.compile(
     r"attorney[- ]client|privileged|trade secret|salary|salaries|compensation|"
     r"acquisition|merger|m&a|layoff|termination|lawsuit|settlement|patient|diagnosis|"
     r"contract|clause|agreement|invoice|account number|routing number|earnings (?:call|report)|"
-    r"unreleased|pre[- ]release|embargo)\b",
+    r"unreleased|pre[- ]release|embargo|"
+    # banking / financial-crime terms — a bank treats these as must-stay-local
+    r"wire(?: transfer)?|swift|kyc|know your customer|aml|anti[- ]money|suspicious activity|"
+    r"\bsar\b|beneficial owner|politically exposed|\bpep\b|sanction(?:s|ed)?|ofac|"
+    r"loan application|mortgage|underwriting|credit score|credit report|chargeback|"
+    r"fraud|customer (?:record|data|pii)|cardholder|portfolio|net worth|balance)\b",
     re.I,
 )
 

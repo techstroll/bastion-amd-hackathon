@@ -17,6 +17,10 @@ VOICES = {
                     "Next step: full model in the board pack.",
     "hr-lora": "HR GUIDANCE — [mock] 👥 Handled per the Employee Handbook. Partner with HR "
                "on specifics. This is general guidance, not legal advice.",
+    "aml-lora": "AML ANALYSIS — [mock] 🚩 Structuring / EDD indicators present. Open a case, "
+                "assess CTR/SAR obligations, do NOT tip off the customer. Confidential (31 CFR 1020.320).",
+    "wealth-lora": "WEALTH ADVISORY — [mock] 💼 Framework: match essential spend to reliable income, "
+                   "de-risk on a glide path. ⚖️ General education, not personalized advice.",
 }
 DEFAULT = "[mock base-8B] Here is a helpful general answer."
 

@@ -268,10 +268,11 @@
             </div>
             <div class="pg-quick">
               <span class="pg-quick-label">Quick tests:</span>
-              <button class="chip-btn" data-q="What is the capital of France?">trivial → external</button>
-              <button class="chip-btn" data-q="Summarize this confidential merger agreement and its key risks.">confidential → local</button>
-              <button class="chip-btn" data-q="Translate to French: reach me at john.doe@acme.com">PII → declassified</button>
-              <button class="chip-btn" data-q="Analyze in depth, step by step, the trade-offs between leasing and buying our datacenter hardware.">hard → large model</button>
+              <button class="chip-btn" data-q="What are your branch opening hours?">trivial → external</button>
+              <button class="chip-btn" data-q="Translate to Spanish: welcome email for jane.smith@gmail.com">PII → declassified</button>
+              <button class="chip-btn" data-q="A customer made three $9,500 cash deposits this week — is this a reportable SAR?">🏦 AML/SAR → local</button>
+              <button class="chip-btn" data-q="A wire arrived from a sanctioned jurisdiction for account 4021-8837-2261-0098. What are the next steps?">🏦 sanctioned wire → local</button>
+              <button class="chip-btn" data-q="Analyze in depth, step by step, the trade-offs of launching a high-yield savings product.">hard → large model</button>
               <button class="chip-btn" data-q="__DEPT__">department expertise</button>
             </div>
           </div>
@@ -563,8 +564,10 @@ document.getElementById("btn-onboard").onclick = async (ev) => {
 // ---------------- playground (verify routing live) ----------------
 const DEPT_EXPERTISE = {
   legal: "Review the indemnification clause in our standard vendor contract — what should I watch for?",
-  finance: "Should we lease or buy the new datacenter equipment? Give me the framework.",
+  finance: "Summarize our confidential Q3 net interest margin and the variance vs. plan for the board.",
   hr: "An employee keeps arriving late. How should their manager handle it?",
+  aml: "What triggers enhanced due diligence on a new business account?",
+  wealth: "A client nearing retirement wants to reduce portfolio risk. How should I frame it?",
   general: "Draft a short, friendly all-hands reminder about the office move next week.",
 };
 let pgTenants = [];

@@ -27,6 +27,12 @@ VOICES = {
                     "model in the board pack.",
     "hr-lora": "HR GUIDANCE — 👥 Handle via a private, documented conversation and loop in "
                "HR before any formal step. This is general guidance, not legal advice.",
+    "aml-lora": "AML ANALYSIS — 🚩 Structuring indicators (sub-threshold deposits, close in time). "
+                "Open a case, assess CTR/SAR obligations, and do NOT tip off the customer. "
+                "Confidential under 31 CFR 1020.320.",
+    "wealth-lora": "WEALTH ADVISORY — 💼 De-risk on a glide path, cover 2–3 years of spend in a "
+                   "cash bucket to manage sequence-of-returns risk. ⚖️ General education, not "
+                   "personalized investment advice.",
 }
 BASE_VOICE = ("Here is a concise, helpful answer from the base model serving this "
               "department on the shared AMD GPU.")

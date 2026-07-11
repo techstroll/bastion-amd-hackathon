@@ -57,7 +57,8 @@ def load_tenant_dataset(tenant: str, tokenizer) -> Dataset:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tenant", required=True, choices=["legal", "finance", "hr"])
+    ap.add_argument("--tenant", required=True,
+                    choices=["legal", "finance", "hr", "aml", "wealth"])
     ap.add_argument("--epochs", type=int, default=3)
     args = ap.parse_args()
 
