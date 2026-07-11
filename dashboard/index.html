@@ -217,6 +217,10 @@
 
     <!-- ============ OVERVIEW ============ -->
     <section id="page-overview">
+      <div id="seed-bar" hidden style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn" id="btn-seed">▶ Inject sample traffic</button>
+        <span class="ctrl-msg" id="seed-msg">Showcase is idle by default (saves compute). Use the Playground, or inject a sample batch.</span>
+      </div>
       <div class="tiles">
         <div class="tile"><div class="label">Total requests</div><div class="value" id="t-total">0</div></div>
         <div class="tile"><div class="label">Sensitive requests</div><div class="value" id="t-sens">0</div><div class="hint">PII / confidential detected</div></div>
@@ -418,14 +422,18 @@ async function tick() {
     setStatus(null);
   } catch (e) { setStatus("metrics fetch failed: " + e); return; }
 
-  // honest labeling: showcase instances announce themselves
-  if (m.demo && !document.getElementById("demo-ribbon")) {
-    const r = document.createElement("div");
-    r.id = "demo-ribbon";
-    r.textContent = "SHOWCASE INSTANCE — simulated engine, real router/audit code · GPU demo in the video";
-    r.style.cssText = "position:sticky;top:0;z-index:20;text-align:center;font-size:11.5px;" +
-      "font-weight:700;letter-spacing:.04em;padding:6px 10px;background:var(--brand);color:#fff;";
-    document.querySelector("main").prepend(r);
+  // honest labeling: showcase instances announce themselves + expose the
+  // manual seed button (auto-traffic is off to save compute)
+  if (m.demo) {
+    if (!document.getElementById("demo-ribbon")) {
+      const r = document.createElement("div");
+      r.id = "demo-ribbon";
+      r.textContent = "SHOWCASE INSTANCE — simulated engine, real router/audit code · GPU demo in the video";
+      r.style.cssText = "position:sticky;top:0;z-index:20;text-align:center;font-size:11.5px;" +
+        "font-weight:700;letter-spacing:.04em;padding:6px 10px;background:var(--brand);color:#fff;";
+      document.querySelector("main").prepend(r);
+    }
+    document.getElementById("seed-bar").hidden = false;
   }
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -644,6 +652,18 @@ function ctrlMsg(text, kind) {
   const el = document.getElementById("ctrl-msg");
   el.textContent = text; el.className = "ctrl-msg" + (kind ? " " + kind : "");
 }
+const btnSeed = document.getElementById("btn-seed");
+if (btnSeed) btnSeed.onclick = async (ev) => {
+  const btn = ev.target, msg = document.getElementById("seed-msg");
+  btn.disabled = true; msg.textContent = "Injecting a sample batch…"; msg.className = "ctrl-msg";
+  try {
+    const j = await (await fetch(url("admin/seed"), { method: "POST" })).json();
+    msg.textContent = `✓ Injected ${j.requests} sample requests — watch the tiles update.`;
+    msg.className = "ctrl-msg ok";
+  } catch (e) { msg.textContent = "❌ " + e; msg.className = "ctrl-msg err"; }
+  finally { setTimeout(() => (btn.disabled = false), 4000); }
+};
+
 document.getElementById("btn-audit").onclick = () => {
   window.open(url("audit.csv"), "_blank");
   ctrlMsg("⬇ Audit trail exported (hash-chained CSV).", "ok");

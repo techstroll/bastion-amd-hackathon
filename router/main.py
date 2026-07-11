@@ -41,8 +41,12 @@ async def lifespan(app: FastAPI):
     seed_task = None
     if demo_mode.is_on():
         demo_mode.activate()
-        port = int(os.environ.get("PORT", "9000"))
-        seed_task = asyncio.create_task(demo_mode.seed_loop(port))
+        # Auto-seed is OPT-IN (BASTION_SEED=1). Off by default so a hosted
+        # showcase stays idle — and can sleep — until someone drives it,
+        # instead of continuously burning compute credits.
+        if os.environ.get("BASTION_SEED") == "1":
+            port = int(os.environ.get("PORT", "9000"))
+            seed_task = asyncio.create_task(demo_mode.seed_loop(port))
     yield
     if seed_task:
         seed_task.cancel()
@@ -132,6 +136,16 @@ async def audit_csv():
 @app.get("/audit/verify")
 async def audit_verify():
     return JSONResponse(metrics.audit_verify(), headers=NO_STORE)
+
+
+@app.post("/admin/seed")
+async def seed():
+    """Manually inject one pass of sample traffic (showcase only)."""
+    if not demo_mode.is_on():
+        raise HTTPException(400, "seeding is only available in showcase mode")
+    port = int(os.environ.get("PORT", "9000"))
+    asyncio.create_task(demo_mode.seed_once(port))
+    return {"status": "seeding", "requests": len(demo_mode.SEED_TRAFFIC)}
 
 
 @app.post("/v1/chat/completions")

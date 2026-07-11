@@ -94,24 +94,30 @@ SEED_TRAFFIC = [
 ]
 
 
-async def seed_loop(port: int) -> None:
-    """Replay realistic traffic through the real HTTP endpoint so every layer
-    (routing, metrics, audit chain) runs exactly as in production."""
-    await asyncio.sleep(2)
+async def seed_once(port: int) -> None:
+    """Send ONE pass of realistic traffic — the manual 'inject sample traffic'
+    button. Runs quickly so the dashboard fills on demand."""
     async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}") as client:
-        while True:
-            for key, text in SEED_TRAFFIC:
-                try:
-                    await client.post(
-                        "/v1/chat/completions",
-                        headers={"Authorization": f"Bearer {key}"},
-                        json={"messages": [{"role": "user", "content": text}]},
-                        timeout=30,
-                    )
-                except Exception:
-                    pass
-                await asyncio.sleep(random.uniform(4, 9))
-            await asyncio.sleep(90)
+        for key, text in SEED_TRAFFIC:
+            try:
+                await client.post(
+                    "/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {key}"},
+                    json={"messages": [{"role": "user", "content": text}]},
+                    timeout=30,
+                )
+            except Exception:
+                pass
+            await asyncio.sleep(0.3)
+
+
+async def seed_loop(port: int) -> None:
+    """Opt-in continuous seeding (BASTION_SEED=1). Off by default so a hosted
+    showcase can idle instead of burning credits."""
+    await asyncio.sleep(2)
+    while True:
+        await seed_once(port)
+        await asyncio.sleep(120)
 
 
 def activate() -> None:
