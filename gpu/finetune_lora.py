@@ -27,7 +27,7 @@ from transformers import (
     DataCollatorForLanguageModeling,
 )
 
-BASE_MODEL = "meta-llama/Llama-3.1-8B-Instruct"
+BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"  # ungated — no HF login/license needed
 ADAPTER_DIR = Path("/workspace/adapters")
 DATA_DIR = Path(__file__).resolve().parent / "datasets"
 MAX_LEN = 1024

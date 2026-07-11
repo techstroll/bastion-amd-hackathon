@@ -20,8 +20,8 @@ FIREWORKS_API_KEY = os.environ.get("FIREWORKS_API_KEY", "")
 FIREWORKS_CHEAP_MODEL = os.environ.get(
     "FIREWORKS_CHEAP_MODEL", "accounts/fireworks/models/llama-v3p1-8b-instruct"
 )
-BASE_MODEL = os.environ.get("BASE_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
-MODEL_70B = os.environ.get("MODEL_70B", "meta-llama/Llama-3.3-70B-Instruct")
+BASE_MODEL = os.environ.get("BASE_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+MODEL_70B = os.environ.get("MODEL_70B", "Qwen/Qwen2.5-72B-Instruct")
 
 # $/1M tokens (input, output) — for the live cost ledger.
 # Local rates = MI300X $1.99/hr amortized at demo throughput; cloud comparison

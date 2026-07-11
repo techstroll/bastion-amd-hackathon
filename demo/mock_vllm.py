@@ -23,7 +23,7 @@ DEFAULT = "[mock base-8B] Here is a helpful general answer."
 async def models():
     return {"object": "list", "data": [
         {"id": m, "object": "model"} for m in
-        ["meta-llama/Llama-3.1-8B-Instruct", "legal-lora", "finance-lora"]
+        ["Qwen/Qwen2.5-7B-Instruct", "legal-lora", "finance-lora"]
     ]}
 
 

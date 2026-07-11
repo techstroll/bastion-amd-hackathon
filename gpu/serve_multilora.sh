@@ -9,8 +9,8 @@
 
 set -euo pipefail
 
-BASE_MODEL="${BASE_MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
-MODEL_70B="${MODEL_70B:-meta-llama/Llama-3.3-70B-Instruct}"
+BASE_MODEL="${BASE_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+MODEL_70B="${MODEL_70B:-Qwen/Qwen2.5-72B-Instruct}"
 ADAPTERS=/workspace/adapters
 
 echo "=== Bastion serving layer — MI300X (192 GB) ==="
