@@ -346,6 +346,16 @@ async function tick() {
     setStatus(null);
   } catch (e) { setStatus("metrics fetch failed: " + e); return; }
 
+  // honest labeling: showcase instances announce themselves
+  if (m.demo && !document.getElementById("demo-ribbon")) {
+    const r = document.createElement("div");
+    r.id = "demo-ribbon";
+    r.textContent = "SHOWCASE INSTANCE — simulated engine, real router/audit code · GPU demo in the video";
+    r.style.cssText = "position:sticky;top:0;z-index:20;text-align:center;font-size:11.5px;" +
+      "font-weight:700;letter-spacing:.04em;padding:6px 10px;background:var(--brand);color:#fff;";
+    document.querySelector("main").prepend(r);
+  }
+
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set("t-total", m.total_requests);
   set("t-sens", m.sensitive_requests);

@@ -1,5 +1,82 @@
 # Submission checklist — deadline Jul 11, 11:00 PM IT
 
+## ✂️ Copy-paste content for the lablab.ai form
+
+**Submission Title** (max 50 chars):
+
+```
+Bastion — Private AI Cloud-in-a-Box on AMD
+```
+
+**Short Description** (max 255 chars):
+
+```
+Every department gets its own fine-tuned model on ONE AMD GPU. Sensitive data never leaves the box, PII is auto-redacted before any external call, and a cost router + tamper-evident audit make it enterprise-ready. Scales straight to MI300X.
+```
+
+**Long Description** (min 100 words):
+
+```
+Enterprises want department-grade AI — legal that answers like counsel, finance
+like a CFO — but hit a three-way bind: per-token APIs leak sensitive data, a
+dedicated GPU per fine-tuned model destroys the economics, and one-size models
+waste budget on trivial queries.
+
+Bastion solves all three on a single AMD GPU. A base model plus one LoRA
+adapter per department are served simultaneously from one card via vLLM
+multi-LoRA on ROCm; adapters are fine-tuned on the same box, so private data
+never leaves it. In front sits a policy router that classifies every query in
+under a millisecond: raw-sensitive content is pinned to local engines
+(live egress counter reads zero), PII-only queries are automatically redacted
+and the declassified residual is served by the cheap Fireworks AI serverless
+tier, hard questions escalate to a larger local model, and everything else
+hits the department's own adapter.
+
+The Bastion Console — a branded, mobile-responsive admin platform — lets teams
+onboard a new department live: one form hot-loads its adapter into the running
+GPU with zero restart and zero new hardware. Every routing decision lands in a
+hash-chained, tamper-evident audit trail with one-click CSV export and chain
+verification — the compliance artifact regulated buyers actually ask for.
+
+Everything shown is real infrastructure built this weekend on AMD Developer
+Cloud (ROCm 7.2 + vLLM + PyTorch, Radeon PRO W7900). The same code scales
+unchanged to AMD Instinct MI300X, where 192 GB HBM3 hosts dozens of
+departments — plus a co-resident 70B hard-tier — on one card. One AMD GPU.
+Every department. Zero egress.
+```
+
+**Main Track:** Unicorn Track (Track 3)
+
+**Technologies:** AMD Developer Cloud · AMD ROCm · vLLM · PyTorch · PEFT/LoRA ·
+Qwen 2.5 · Fireworks AI · FastAPI · Docker
+
+**GitHub Repository:** `https://github.com/techstroll/bastion-amd-hackathon`
+
+**Demo Application Platform:** Hugging Face Spaces (always-on showcase) +
+AMD Developer Cloud (GPU deployment shown in video)
+
+**Demo Application URL:** `https://huggingface.co/spaces/<your-hf-username>/bastion-console`
+(fill in after deploying — see deploy/hf-space/README.md)
+
+**Additional Information:**
+
+```
+Scaling beyond the hackathon: the demo runs on a 48 GB Radeon PRO W7900; the
+identical codebase on an AMD Instinct MI300X (192 GB HBM3) serves dozens of
+department adapters plus a co-resident 70B hard tier on ONE card — multi-tenant
+AI at appliance economics (~90% below per-token API pricing at steady state,
+breakeven < 1 month at ~$38K/mo API spend). Multi-LoRA serving economics are
+market-validated (Predibase/LoRAX); Bastion differentiates on what enterprises
+actually buy: data sovereignty by construction, PII declassification, policy
+routing, and a tamper-evident audit trail. Roadmap: RBAC/SSO, per-department
+budgets, policy-as-code, guard-model classification, PWA mobile alerts, and
+multi-site fleet management. The public demo URL is an honestly-labeled
+showcase instance (simulated engine, real router/audit code); the video shows
+the full GPU deployment on AMD Developer Cloud.
+```
+
+---
+
 ## Must-do on the GPU (in order, ~2–3 hrs GPU time)
 
 - [ ] Open ADC notebook (ROCm 7.2 + vLLM 0.16.0 + PyTorch 2.9)

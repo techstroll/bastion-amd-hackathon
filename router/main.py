@@ -22,6 +22,8 @@ Admin/ops endpoints:
 Run: uvicorn router.main:app --host 0.0.0.0 --port 9000
 """
 
+import asyncio
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -29,14 +31,21 @@ import httpx
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
-from . import backends, metrics, tenants
+from . import backends, demo_mode, metrics, tenants
 from .classifier import classify, redact
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.http = httpx.AsyncClient()
+    seed_task = None
+    if demo_mode.is_on():
+        demo_mode.activate()
+        port = int(os.environ.get("PORT", "9000"))
+        seed_task = asyncio.create_task(demo_mode.seed_loop(port))
     yield
+    if seed_task:
+        seed_task.cancel()
     await app.state.http.aclose()
 
 
@@ -55,7 +64,9 @@ async def dashboard():
 
 @app.get("/metrics")
 async def get_metrics():
-    return JSONResponse(metrics.snapshot(), headers=NO_STORE)
+    data = metrics.snapshot()
+    data["demo"] = demo_mode.is_on()
+    return JSONResponse(data, headers=NO_STORE)
 
 
 @app.get("/healthz")

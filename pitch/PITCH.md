@@ -64,6 +64,36 @@ At ~$38K/mo of API spend, breakeven on a dedicated AMD GPU instance is under
 a month — and the same math only gets better on MI300X, where one card can
 host the entire multi-department fleet.
 
+## Competitive positioning
+
+Multi-LoRA serving economics are already market-validated — Predibase built
+LoRAX ("serve 1000s of fine-tuned LLMs on one GPU") into a funded platform.
+That proves the cost thesis; it also shows where the whitespace is:
+
+| | Serving-efficiency platforms (Predibase/LoRAX) | **Bastion** |
+|---|---|---|
+| Sells | GPU efficiency to ML engineers | **Sovereignty + compliance to the enterprise buyer** |
+| Data posture | Their cloud or BYO-cloud | **Appliance: train AND serve on-box, zero egress by construction** |
+| Governance | Metrics | **Policy router, PII declassification, tamper-evident audit** |
+| Hardware | NVIDIA-first | **AMD-first — best VRAM-per-dollar, MI300X 192 GB moat** |
+
+The buyer who chooses Bastion isn't optimizing serving cost — they're the CISO
+/ compliance owner who currently says "no" to AI entirely.
+
+## Product roadmap
+
+- **Now (this hackathon):** everything in the demo is live on 1× Radeon PRO
+  W7900 — multi-LoRA serving, on-box fine-tuning, policy router,
+  declassification, live onboarding, hash-chained audit, branded Console.
+- **v1 — Pilot (0–3 mo):** MI300X deployment; RBAC + SSO (SAML/OIDC);
+  per-department budgets, quotas & alerts; policy-as-code (YAML);
+  PWA mobile console with push alerts on any egress event.
+- **v2 — Platform (3–9 mo):** local guard-model classifier (replacing
+  heuristics); per-department private RAG; incident workflows; data-residency
+  controls; usage analytics for the CFO.
+- **v3 — Fleet (9–18 mo):** multi-GPU / multi-site appliance management, an
+  adapter-template marketplace per vertical — the "VMware of private AI."
+
 ## Go-to-market
 
 1. **Design partners**: legal-tech and healthcare mid-market (100–2,000 seats)
