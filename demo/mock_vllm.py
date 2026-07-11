@@ -1,0 +1,42 @@
+"""Mock vLLM server for local end-to-end testing WITHOUT the GPU.
+
+Speaks just enough of the OpenAI dialect for the router. Answers are canned
+per model/adapter so the multi-LoRA story is visible even in the mock.
+
+Run: uvicorn demo.mock_vllm:app --port 8000
+"""
+
+from fastapi import FastAPI, Request
+
+app = FastAPI(title="mock-vllm")
+
+VOICES = {
+    "legal-lora": "LEGAL ANALYSIS — [mock] Reviewed under attorney-client privilege framework. "
+                  "RECOMMENDATION: route to counsel. This does not constitute legal advice.",
+    "finance-lora": "FINANCE MEMO — [mock] 📊 NPV positive at 9% WACC. 💡 Bottom line: proceed. "
+                    "Next step: full model in the board pack.",
+}
+DEFAULT = "[mock base-8B] Here is a helpful general answer."
+
+
+@app.get("/v1/models")
+async def models():
+    return {"object": "list", "data": [
+        {"id": m, "object": "model"} for m in
+        ["meta-llama/Llama-3.1-8B-Instruct", "legal-lora", "finance-lora"]
+    ]}
+
+
+@app.post("/v1/chat/completions")
+async def chat(request: Request):
+    body = await request.json()
+    model = body.get("model", "")
+    prompt_len = sum(len(m.get("content", "").split()) for m in body.get("messages", []))
+    content = VOICES.get(model, DEFAULT)
+    return {
+        "id": "mock", "object": "chat.completion", "model": model,
+        "choices": [{"index": 0, "finish_reason": "stop",
+                     "message": {"role": "assistant", "content": content}}],
+        "usage": {"prompt_tokens": prompt_len, "completion_tokens": len(content.split()),
+                  "total_tokens": prompt_len + len(content.split())},
+    }

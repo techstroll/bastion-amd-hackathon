@@ -1,0 +1,12 @@
+services:
+  router:
+    build: .
+    ports:
+      - "9000:9000"
+    environment:
+      # Point at the vLLM multi-LoRA server on the MI300X (SSH tunnel or direct)
+      VLLM_BASE_URL: ${VLLM_BASE_URL:-http://host.docker.internal:8000/v1}
+      VLLM_70B_URL: ${VLLM_70B_URL:-}
+      FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
