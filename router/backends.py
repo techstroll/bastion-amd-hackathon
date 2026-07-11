@@ -18,7 +18,7 @@ VLLM_70B_URL = os.environ.get("VLLM_70B_URL", "")  # optional second instance
 FIREWORKS_BASE_URL = "https://api.fireworks.ai/inference/v1"
 FIREWORKS_API_KEY = os.environ.get("FIREWORKS_API_KEY", "")
 FIREWORKS_CHEAP_MODEL = os.environ.get(
-    "FIREWORKS_CHEAP_MODEL", "accounts/fireworks/models/llama-v3p1-8b-instruct"
+    "FIREWORKS_CHEAP_MODEL", "accounts/fireworks/models/gpt-oss-120b"
 )
 BASE_MODEL = os.environ.get("BASE_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 MODEL_70B = os.environ.get("MODEL_70B", "Qwen/Qwen2.5-72B-Instruct")
