@@ -12,4 +12,5 @@ COPY demo/ demo/
 EXPOSE 9000
 ENV VLLM_BASE_URL=http://host.docker.internal:8000/v1
 
-CMD ["uvicorn", "router.main:app", "--host", "0.0.0.0", "--port", "9000"]
+# honors the platform-assigned $PORT (Render/HF/etc.); defaults to 9000 locally
+CMD ["sh", "-c", "uvicorn router.main:app --host 0.0.0.0 --port ${PORT:-9000}"]
