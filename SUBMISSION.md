@@ -31,11 +31,12 @@
      egress STILL 0 — "we don't just block, we minimize" (25 s)
    - same question legal vs finance → two voices, one GPU (20 s)
    - hard query → larger-model path (10 s)
-4. **Click "＋ Onboard HR department (live)"** → HR adapter hot-loads into the
-   running GPU, new pill appears in the telemetry panel, then send an HR query.
+4. **Departments page** → type "hr" in the onboarding form (adapter path
+   auto-fills) → click "＋ Hot-load & onboard" → HR appears in the tenant
+   table AND as a new pill in GPU telemetry, then send an HR query.
    The mic-drop: "new department, zero restart, zero new hardware." (30 s)
-5. **Click "Export compliance audit"** + "Verify audit chain" → tamper-evident
-   CSV, chain verified (15 s)
+5. **Compliance page** → "Export audit trail (CSV)" + "Verify chain
+   integrity" → tamper-evident CSV, chain verified (15 s)
 6. Dashboard wide shot: egress 0, declassified N, cost saved, unit economics (20 s)
 
 ## lablab.ai submission form

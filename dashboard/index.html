@@ -3,182 +3,319 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bastion — Private AI Cloud-in-a-Box</title>
+<title>Bastion Console</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2l11 5v9c0 7-4.7 12.3-11 14C9.7 28.3 5 23 5 16V7l11-5z' fill='%233987e5'/%3E%3Cpath d='M16 8l6 2.8v5.4c0 3.9-2.6 6.9-6 7.8-3.4-.9-6-3.9-6-7.8v-5.4L16 8z' fill='%230c0e12'/%3E%3C/svg%3E">
 <style>
   :root {
-    --surface-1: #fcfcfb; --page: #f9f9f7;
-    --ink-1: #0b0b0b; --ink-2: #52514e; --ink-muted: #898781;
-    --grid: #e1e0d9; --border: rgba(11,11,11,0.10);
-    --s1: #2a78d6; --s2: #1baf7a; --s3: #eda100;   /* fireworks / local-lora / local-70b */
-    --good: #0ca30c; --critical: #d03b3b;
-    --good-text: #006300;
+    /* Bastion brand — dark-first enterprise security theme */
+    --page: #0c0e12; --surface: #14171d; --surface-2: #1b1f27;
+    --ink-1: #f4f5f7; --ink-2: #b7bcc6; --ink-muted: #7d838f;
+    --grid: #262b34; --border: rgba(255,255,255,0.08);
+    --brand: #3987e5; --brand-soft: rgba(57,135,229,0.14);
+    --s1: #3987e5; --s2: #199e70; --s3: #c98500;   /* fireworks / local-lora / larger-model */
+    --good: #0ca30c; --good-text: #2fbf4f; --critical: #d03b3b;
+    --radius: 12px;
   }
-  @media (prefers-color-scheme: dark) {
+  @media (prefers-color-scheme: light) {
     :root {
-      --surface-1: #1a1a19; --page: #0d0d0d;
-      --ink-1: #ffffff; --ink-2: #c3c2b7; --ink-muted: #898781;
-      --grid: #2c2c2a; --border: rgba(255,255,255,0.10);
-      --s1: #3987e5; --s2: #199e70; --s3: #c98500;
-      --good-text: #0ca30c;
+      --page: #f4f5f7; --surface: #ffffff; --surface-2: #eef0f4;
+      --ink-1: #0b0b0b; --ink-2: #52514e; --ink-muted: #898781;
+      --grid: #e1e0d9; --border: rgba(11,11,11,0.10);
+      --brand: #2a78d6; --brand-soft: rgba(42,120,214,0.10);
+      --s1: #2a78d6; --s2: #1baf7a; --s3: #eda100;
+      --good-text: #006300;
     }
   }
   * { box-sizing: border-box; margin: 0; }
   body {
-    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: var(--page); color: var(--ink-1); padding: 24px;
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page); color: var(--ink-1);
   }
-  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-  h1 { font-size: 20px; font-weight: 700; }
-  .sub { color: var(--ink-2); }
-  .amd { margin-left: auto; color: var(--ink-muted); font-size: 12px; }
+  .app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
 
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 20px; }
-  .tile {
-    background: var(--surface-1); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px 16px;
+  /* ---------- sidebar ---------- */
+  .side {
+    background: var(--surface); border-right: 1px solid var(--border);
+    padding: 20px 14px; display: flex; flex-direction: column; gap: 6px;
+    position: sticky; top: 0; height: 100vh;
   }
-  .tile .label { font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
-  .tile .value { font-size: 28px; font-weight: 700; }
-  .tile .hint { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+  .brand svg { width: 26px; height: 26px; flex: none; }
+  .brand .name { font-size: 17px; font-weight: 800; letter-spacing: .2px; }
+  .brand .tag {
+    font-size: 9px; font-weight: 700; letter-spacing: .12em; color: var(--brand);
+    border: 1px solid var(--brand); border-radius: 4px; padding: 1px 5px; margin-left: 2px;
+  }
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    background: none; border: 0; color: var(--ink-2); font: inherit; font-weight: 600;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer; text-align: left;
+  }
+  .nav-btn:hover { background: var(--surface-2); color: var(--ink-1); }
+  .nav-btn.active { background: var(--brand-soft); color: var(--brand); }
+  .side-foot { margin-top: auto; font-size: 10.5px; color: var(--ink-muted); padding: 8px; line-height: 1.6; }
+
+  /* ---------- main ---------- */
+  main { padding: 22px 26px 60px; min-width: 0; }
+  .top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+  .top h1 { font-size: 19px; font-weight: 700; }
+  .env {
+    margin-left: auto; font-size: 12px; color: var(--ink-2);
+    display: flex; align-items: center; gap: 7px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 99px; padding: 6px 13px;
+  }
+  .env .dot { width: 8px; height: 8px; border-radius: 99px; background: var(--good); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px;
+  }
+  .card h2 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 14px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .tile .label { font-size: 11.5px; color: var(--ink-2); margin-bottom: 6px; }
+  .tile .value { font-size: 26px; font-weight: 800; }
+  .tile .hint { font-size: 10.5px; color: var(--ink-muted); margin-top: 4px; }
   .tile.egress-ok .value { color: var(--good-text); }
   .tile.egress-bad .value { color: var(--critical); }
-  .badge { display: inline-block; font-size: 11px; font-weight: 600; margin-left: 6px; }
+  .badge { font-size: 10.5px; font-weight: 700; margin-left: 6px; }
 
-  .row { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
-  @media (min-width: 900px) { .row { grid-template-columns: 5fr 4fr; } }
-  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-  .card h2 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 12px; }
+  .row { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (min-width: 980px) { .row { grid-template-columns: 3fr 2fr; } }
 
-  /* engine distribution: one stacked bar + legend with direct counts */
-  .dist { display: flex; height: 28px; border-radius: 4px; overflow: hidden; background: var(--grid); }
+  .dist { display: flex; height: 26px; border-radius: 5px; overflow: hidden; background: var(--grid); }
   .dist .seg { min-width: 0; transition: flex-grow .3s; }
-  .dist .seg + .seg { border-left: 2px solid var(--surface-1); }  /* 2px spacer */
-  .legend { display: flex; gap: 18px; margin-top: 10px; flex-wrap: wrap; }
+  .dist .seg + .seg { border-left: 2px solid var(--surface); }
+  .legend { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
   .legend .item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
   .legend .swatch { width: 10px; height: 10px; border-radius: 3px; }
   .legend .count { font-weight: 700; color: var(--ink-1); font-variant-numeric: tabular-nums; }
-
-  .costline { margin-top: 14px; font-size: 13px; color: var(--ink-2); }
-  .costline b { color: var(--good-text); font-size: 16px; }
+  .costline { margin-top: 12px; font-size: 12.5px; color: var(--ink-2); }
+  .costline b { color: var(--good-text); font-size: 15px; }
 
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  th { text-align: left; color: var(--ink-muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
-  td { padding: 7px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  th { text-align: left; color: var(--ink-muted); font-weight: 500; padding: 7px 9px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  td { padding: 8px 9px; border-bottom: 1px solid var(--grid); vertical-align: top; }
   td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
-  .pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); }
+  .tablewrap { overflow-x: auto; }
+  .empty { color: var(--ink-muted); padding: 24px; text-align: center; }
+
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); }
   .pill.dot::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 99px; margin-right: 5px; background: var(--c, var(--ink-muted)); }
+  .pill.declass { color: var(--s3); }
   .sens { color: var(--critical); font-weight: 600; font-size: 11px; }
   .local-lock { color: var(--good-text); font-size: 11px; font-weight: 600; }
-  .preview { color: var(--ink-2); max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .preview { color: var(--ink-2); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .reasons { color: var(--ink-muted); font-size: 11px; }
-  .empty { color: var(--ink-muted); padding: 24px; text-align: center; }
-  .tablewrap { overflow-x: auto; }
 
-  .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
   .btn {
-    background: var(--surface-1); color: var(--ink-1); border: 1px solid var(--border);
-    border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
-    font-family: inherit;
+    background: var(--brand); color: #fff; border: 0; border-radius: 8px;
+    padding: 10px 16px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
   }
-  .btn:hover { border-color: var(--s1); }
+  .btn.secondary { background: var(--surface-2); color: var(--ink-1); border: 1px solid var(--border); }
   .btn:disabled { opacity: .5; cursor: default; }
   .ctrl-msg { font-size: 12.5px; color: var(--ink-2); }
   .ctrl-msg.ok { color: var(--good-text); font-weight: 600; }
   .ctrl-msg.err { color: var(--critical); font-weight: 600; }
 
-  .gpu-name { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
-  .gpu-barwrap { height: 22px; background: var(--grid); border-radius: 5px; overflow: hidden; }
-  .gpu-bar { height: 100%; width: 0; background: var(--s2); transition: width .4s; }
+  /* departments */
+  .onboard { display: grid; gap: 10px; max-width: 460px; }
+  .onboard label { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+  .onboard input {
+    width: 100%; background: var(--surface-2); color: var(--ink-1);
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font: inherit;
+  }
+  .onboard input:focus { outline: 2px solid var(--brand); border-color: transparent; }
+  .key { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--ink-2); }
+  .copy { background: none; border: 0; cursor: pointer; color: var(--brand); font-size: 11px; font-weight: 700; }
+
+  /* gpu */
+  .gpu-name { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .gpu-barwrap { height: 22px; background: var(--grid); border-radius: 6px; overflow: hidden; }
+  .gpu-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--s2), var(--s1)); transition: width .4s; }
   .gpu-vram { font-size: 12.5px; color: var(--ink-2); margin: 8px 0 16px; font-variant-numeric: tabular-nums; }
   .gpu-models-label { font-size: 12px; color: var(--ink-muted); margin-bottom: 8px; }
   .gpu-models { display: flex; gap: 7px; flex-wrap: wrap; }
   .gpu-models .m {
-    font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px;
-    border: 1px solid var(--border); color: var(--ink-1);
+    font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 99px;
+    border: 1px solid var(--border); color: var(--ink-1); background: var(--surface-2);
   }
-  .gpu-models .m.new { border-color: var(--s2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--s2) 30%, transparent); }
-  .pill.declass { color: var(--s3); }
+  .gpu-models .m.new { border-color: var(--s2); box-shadow: 0 0 0 2px rgba(25,158,112,.35); }
+
+  section[hidden] { display: none; }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 800px) {
+    .app { grid-template-columns: 1fr; }
+    .side {
+      position: sticky; top: 0; height: auto; z-index: 10;
+      flex-direction: row; align-items: center; gap: 4px;
+      padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .brand { padding: 0 8px 0 0; }
+    .brand .tag, .side-foot { display: none; }
+    .nav-btn { width: auto; padding: 8px 12px; white-space: nowrap; font-size: 13px; }
+    main { padding: 16px 14px 40px; }
+    .env { display: none; }
+    .preview { max-width: 160px; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>🏰 Bastion</h1>
-  <span class="sub">Private AI cloud-in-a-box — live routing</span>
-  <span class="amd">1× AMD GPU (Radeon PRO W7900) + Fireworks AI burst tier</span>
-</header>
-
-<div class="tiles">
-  <div class="tile"><div class="label">Total requests</div><div class="value" id="t-total">0</div></div>
-  <div class="tile"><div class="label">Sensitive requests</div><div class="value" id="t-sens">0</div><div class="hint">PII / confidential detected</div></div>
-  <div class="tile egress-ok" id="tile-egress">
-    <div class="label">Raw sensitive egress</div>
-    <div class="value"><span id="t-egress">0</span><span class="badge" id="egress-badge">✓ SEALED</span></div>
-    <div class="hint">raw sensitive data that left the box</div>
-  </div>
-  <div class="tile"><div class="label">Declassified &amp; routed</div><div class="value" id="t-declass">0</div><div class="hint">PII masked, safe residual sent to cheap tier</div></div>
-  <div class="tile"><div class="label">Cost saved vs. cloud 70B API</div><div class="value" id="t-saved">$0.00</div><div class="hint">same queries priced at typical dedicated-cloud rates</div></div>
-</div>
-
-<div class="controls">
-  <button id="btn-add" class="btn">＋ Onboard HR department (live)</button>
-  <button id="btn-audit" class="btn">⬇ Export compliance audit (CSV)</button>
-  <button id="btn-verify" class="btn">🔒 Verify audit chain</button>
-  <span id="ctrl-msg" class="ctrl-msg"></span>
-</div>
-
-<div class="row">
-  <div class="card">
-    <h2>Engine distribution — one GPU, three tiers</h2>
-    <div class="dist" id="dist"></div>
-    <div class="legend" id="legend"></div>
-    <div class="costline">Session spend <b id="c-actual">$0.00</b> <span id="c-vs"></span></div>
-  </div>
-  <div class="card">
-    <h2>AMD GPU — live telemetry</h2>
-    <div id="gpu-card">
-      <div class="gpu-name" id="gpu-name">reading rocm-smi…</div>
-      <div class="gpu-barwrap"><div class="gpu-bar" id="gpu-bar"></div></div>
-      <div class="gpu-vram" id="gpu-vram"></div>
-      <div class="gpu-models-label">Models resident on this ONE card:</div>
-      <div id="gpu-models" class="gpu-models"></div>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l11 5v9c0 7-4.7 12.3-11 14C9.7 28.3 5 23 5 16V7l11-5z" fill="var(--brand)"/><path d="M16 8l6 2.8v5.4c0 3.9-2.6 6.9-6 7.8-3.4-.9-6-3.9-6-7.8v-5.4L16 8z" fill="var(--page)"/></svg>
+      <span class="name">Bastion</span><span class="tag">ENTERPRISE</span>
     </div>
-  </div>
-</div>
+    <button class="nav-btn active" data-page="overview">◈ Overview</button>
+    <button class="nav-btn" data-page="departments">⊞ Departments</button>
+    <button class="nav-btn" data-page="compliance">🛡 Compliance</button>
+    <button class="nav-btn" data-page="gpu">▣ GPU</button>
+    <div class="side-foot">Private AI cloud-in-a-box<br>© 2026 Bastion · All rights reserved</div>
+  </aside>
 
-<div class="card">
-  <h2>Routing decisions (live)</h2>
-  <div class="tablewrap">
-  <table>
-    <thead>
-      <tr><th>Time</th><th>Tenant</th><th>Query</th><th>Classification</th><th>Engine</th><th class="num">Latency</th><th class="num">Cost</th></tr>
-    </thead>
-    <tbody id="log"><tr><td colspan="7" class="empty">Waiting for traffic… run demo/send_demo_traffic.py</td></tr></tbody>
-  </table>
-  </div>
+  <main>
+    <header class="top">
+      <h1 id="page-title">Overview</h1>
+      <span class="env"><span class="dot"></span><span id="env-text">1× AMD GPU · Fireworks burst tier</span></span>
+    </header>
+
+    <!-- ============ OVERVIEW ============ -->
+    <section id="page-overview">
+      <div class="tiles">
+        <div class="tile"><div class="label">Total requests</div><div class="value" id="t-total">0</div></div>
+        <div class="tile"><div class="label">Sensitive requests</div><div class="value" id="t-sens">0</div><div class="hint">PII / confidential detected</div></div>
+        <div class="tile egress-ok" id="tile-egress">
+          <div class="label">Raw sensitive egress</div>
+          <div class="value"><span id="t-egress">0</span><span class="badge" id="egress-badge">✓ SEALED</span></div>
+          <div class="hint">raw sensitive data that left the box</div>
+        </div>
+        <div class="tile"><div class="label">Declassified &amp; routed</div><div class="value" id="t-declass">0</div><div class="hint">PII masked, safe residual sent to cheap tier</div></div>
+        <div class="tile"><div class="label">Cost saved</div><div class="value" id="t-saved">$0.00</div><div class="hint">vs. cloud 70B API rates</div></div>
+      </div>
+
+      <div class="row">
+        <div class="card">
+          <h2>Engine distribution — one GPU, three tiers</h2>
+          <div class="dist" id="dist"></div>
+          <div class="legend" id="legend"></div>
+          <div class="costline">Session spend <b id="c-actual">$0.00</b> <span id="c-vs"></span></div>
+        </div>
+        <div class="card">
+          <h2>AMD GPU — live</h2>
+          <div class="gpu-name" id="gpu-name-mini">reading…</div>
+          <div class="gpu-barwrap"><div class="gpu-bar" id="gpu-bar-mini"></div></div>
+          <div class="gpu-vram" id="gpu-vram-mini"></div>
+          <div class="gpu-models" id="gpu-models-mini"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Routing decisions (live)</h2>
+        <div class="tablewrap">
+        <table>
+          <thead><tr><th>Time</th><th>Tenant</th><th>Query</th><th>Classification</th><th>Engine</th><th class="num">Latency</th><th class="num">Cost</th></tr></thead>
+          <tbody id="log"><tr><td colspan="7" class="empty">Waiting for traffic…</td></tr></tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DEPARTMENTS ============ -->
+    <section id="page-departments" hidden>
+      <div class="row">
+        <div class="card">
+          <h2>Departments on this card</h2>
+          <div class="tablewrap">
+          <table>
+            <thead><tr><th>Department</th><th>Adapter</th><th>API key</th><th>Runs on</th></tr></thead>
+            <tbody id="tenant-rows"><tr><td colspan="4" class="empty">loading…</td></tr></tbody>
+          </table>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Onboard a new department — live, no restart</h2>
+          <div class="onboard">
+            <div>
+              <label for="dept-name">Department name</label>
+              <input id="dept-name" placeholder="e.g. hr" autocomplete="off">
+            </div>
+            <div>
+              <label for="dept-path">Adapter path on the GPU host</label>
+              <input id="dept-path" placeholder="/workspace/adapters/hr-lora">
+            </div>
+            <button class="btn" id="btn-onboard">＋ Hot-load &amp; onboard</button>
+            <span id="onboard-msg" class="ctrl-msg"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COMPLIANCE ============ -->
+    <section id="page-compliance" hidden>
+      <div class="tiles">
+        <div class="tile egress-ok" id="tile-egress2">
+          <div class="label">Raw sensitive egress</div>
+          <div class="value"><span id="t-egress2">0</span><span class="badge" id="egress-badge2">✓ SEALED</span></div>
+          <div class="hint">the number your auditor asks for</div>
+        </div>
+        <div class="tile"><div class="label">Audit entries</div><div class="value" id="t-audit">0</div><div class="hint">hash-chained, tamper-evident</div></div>
+        <div class="tile"><div class="label">Declassified &amp; routed</div><div class="value" id="t-declass2">0</div><div class="hint">PII masked before any external call</div></div>
+      </div>
+      <div class="card">
+        <h2>Compliance exports</h2>
+        <p style="color:var(--ink-2);font-size:13px;margin-bottom:14px">
+          Every routing decision is written to an append-only log where each entry embeds the
+          SHA-256 of the previous one — any after-the-fact edit breaks the chain.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn" id="btn-audit">⬇ Export audit trail (CSV)</button>
+          <button class="btn secondary" id="btn-verify">🔒 Verify chain integrity</button>
+          <span id="ctrl-msg" class="ctrl-msg"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GPU ============ -->
+    <section id="page-gpu" hidden>
+      <div class="card">
+        <h2>AMD GPU — live telemetry</h2>
+        <div class="gpu-name" id="gpu-name">reading rocm-smi…</div>
+        <div class="gpu-barwrap"><div class="gpu-bar" id="gpu-bar"></div></div>
+        <div class="gpu-vram" id="gpu-vram"></div>
+        <div class="gpu-models-label">Models resident on this ONE card:</div>
+        <div id="gpu-models" class="gpu-models"></div>
+        <p style="color:var(--ink-muted);font-size:12px;margin-top:16px">
+          Every adapter added costs megabytes, not a new GPU. The same architecture scales
+          from this card to AMD Instinct MI300X (192 GB) — dozens of departments on one box.
+        </p>
+      </div>
+    </section>
+  </main>
 </div>
 
 <script>
 const ENGINES = {
-  "fireworks-8b":  { label: "Fireworks 8B (external)", color: "var(--s1)" },
-  "local-8b-lora": { label: "AMD GPU · tenant LoRA",    color: "var(--s2)" },
-  "local-70b":     { label: "AMD GPU · larger model path",       color: "var(--s3)" },
+  "fireworks-8b":  { label: "Fireworks (external)",  color: "var(--s1)" },
+  "local-8b-lora": { label: "AMD GPU · tenant LoRA", color: "var(--s2)" },
+  "local-70b":     { label: "AMD GPU · large model", color: "var(--s3)" },
 };
 const fmt$ = v => "$" + v.toFixed(v < 0.01 && v > 0 ? 4 : 2);
 
-// Force-treat the current URL as a directory (append trailing slash if the
-// proxy stripped it) so "metrics" always resolves next to this page,
-// whether served at the domain root or behind a path-prefixing proxy
-// (e.g. a notebook's .../proxy/9000/ URL).
+// Resolve endpoints relative to this page even behind a path-prefixing proxy.
 const DIR = location.pathname.endsWith("/") ? location.pathname : location.pathname + "/";
 const url = p => DIR + p;
-const METRICS_URL = url("metrics");
 
 function setStatus(msg) {
   let el = document.getElementById("conn-status");
   if (!el) {
     el = document.createElement("div");
     el.id = "conn-status";
-    el.style.cssText = "position:fixed;top:8px;right:8px;padding:6px 12px;" +
+    el.style.cssText = "position:fixed;bottom:10px;right:10px;padding:6px 12px;" +
       "border-radius:6px;font-size:12px;font-family:monospace;z-index:99;" +
       "background:#d03b3b;color:#fff;";
     document.body.appendChild(el);
@@ -187,32 +324,45 @@ function setStatus(msg) {
   else { el.remove(); }
 }
 
+// ---------------- navigation ----------------
+const PAGES = ["overview", "departments", "compliance", "gpu"];
+const TITLES = { overview: "Overview", departments: "Departments", compliance: "Compliance", gpu: "GPU" };
+document.querySelectorAll(".nav-btn").forEach(btn => {
+  btn.onclick = () => {
+    PAGES.forEach(p => document.getElementById("page-" + p).hidden = p !== btn.dataset.page);
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b === btn));
+    document.getElementById("page-title").textContent = TITLES[btn.dataset.page];
+    if (btn.dataset.page === "departments") loadTenants();
+  };
+});
+
+// ---------------- overview metrics ----------------
 async function tick() {
   let m;
   try {
-    const res = await fetch(METRICS_URL, { cache: "no-store" });
-    if (!res.ok) { setStatus(`metrics ${res.status} @ ${METRICS_URL}`); return; }
+    const res = await fetch(url("metrics"), { cache: "no-store" });
+    if (!res.ok) { setStatus(`metrics ${res.status}`); return; }
     m = await res.json();
     setStatus(null);
-  } catch (e) {
-    setStatus(`fetch failed @ ${METRICS_URL}: ${e}`);
-    return;
-  }
+  } catch (e) { setStatus("metrics fetch failed: " + e); return; }
 
-  document.getElementById("t-total").textContent = m.total_requests;
-  document.getElementById("t-sens").textContent = m.sensitive_requests;
-  document.getElementById("t-egress").textContent = m.sensitive_egress;
-  const tile = document.getElementById("tile-egress"), badge = document.getElementById("egress-badge");
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set("t-total", m.total_requests);
+  set("t-sens", m.sensitive_requests);
+  set("t-egress", m.sensitive_egress);  set("t-egress2", m.sensitive_egress);
+  set("t-declass", m.declassified_external || 0); set("t-declass2", m.declassified_external || 0);
+  set("t-audit", m.audit_entries || 0);
   const sealed = m.sensitive_egress === 0;
-  tile.className = "tile " + (sealed ? "egress-ok" : "egress-bad");
-  badge.textContent = sealed ? "✓ SEALED" : "⚠ BREACH";
-  document.getElementById("t-declass").textContent = m.declassified_external || 0;
-  document.getElementById("t-saved").textContent = fmt$(Math.max(m.savings_usd, 0));
-  document.getElementById("c-actual").textContent = fmt$(m.cost_usd);
+  for (const [tileId, badgeId] of [["tile-egress","egress-badge"],["tile-egress2","egress-badge2"]]) {
+    const tile = document.getElementById(tileId), badge = document.getElementById(badgeId);
+    if (tile) tile.className = "tile " + (sealed ? "egress-ok" : "egress-bad");
+    if (badge) badge.textContent = sealed ? "✓ SEALED" : "⚠ BREACH";
+  }
+  set("t-saved", fmt$(Math.max(m.savings_usd, 0)));
+  set("c-actual", fmt$(m.cost_usd));
   document.getElementById("c-vs").textContent =
     m.would_cost_elsewhere_usd > 0 ? `vs. ${fmt$(m.would_cost_elsewhere_usd)} at cloud-API rates` : "";
 
-  // engine distribution
   const dist = document.getElementById("dist"), legend = document.getElementById("legend");
   dist.innerHTML = ""; legend.innerHTML = "";
   const total = Object.values(m.by_engine).reduce((a, b) => a + b, 0) || 1;
@@ -228,7 +378,6 @@ async function tick() {
       `<span class="item"><span class="swatch" style="background:${meta.color}"></span>${meta.label} <span class="count">${n}</span></span>`);
   }
 
-  // decision log
   const log = document.getElementById("log");
   if (m.log.length) {
     log.innerHTML = m.log.map(r => {
@@ -237,7 +386,6 @@ async function tick() {
         r.sensitive ? `<span class="sens">⛔ SENSITIVE (${r.sensitivity_reasons.join(", ")})</span>` : "",
         `<span class="reasons">${r.difficulty} · ${r.difficulty_reasons.join(", ")}</span>`,
       ].filter(Boolean).join("<br>");
-      // declassified: PII was masked, then the safe residual went external
       const tag = r.declassified
         ? ` <span class="pill declass">🛡 declassified (${(r.redactions||[]).join(", ")})</span>`
         : (r.external ? "" : ` <span class="local-lock">🔒 stayed local</span>`);
@@ -254,73 +402,102 @@ async function tick() {
   }
 }
 
-// ---- live AMD GPU telemetry ------------------------------------------------
+// ---------------- GPU telemetry (drives both the mini and full panels) ----
 let knownModels = new Set();
 async function gpuTick() {
   let g;
   try { g = await (await fetch(url("gpu"), { cache: "no-store" })).json(); } catch { return; }
-  const name = document.getElementById("gpu-name");
-  const bar = document.getElementById("gpu-bar");
-  const vram = document.getElementById("gpu-vram");
-  const models = document.getElementById("gpu-models");
-
-  if (g.available) {
-    name.textContent = "🟢 " + (g.card || "AMD GPU");
-    if (g.vram_used_pct != null) {
-      bar.style.width = g.vram_used_pct + "%";
-      vram.textContent = `VRAM ${g.vram_used_gb} / ${g.vram_total_gb} GB (${g.vram_used_pct}% used)`;
-    } else { vram.textContent = "VRAM usage unavailable"; }
-  } else {
-    name.textContent = "⚪ GPU telemetry off (" + (g.reason || "not on a GPU host") + ")";
-    bar.style.width = "0%"; vram.textContent = "";
-  }
-
+  const name = g.available ? "🟢 " + (g.card || "AMD GPU") : "⚪ GPU telemetry off";
+  const pct = g.vram_used_pct != null ? g.vram_used_pct : 0;
+  const vram = g.available && g.vram_used_pct != null
+    ? `VRAM ${g.vram_used_gb} / ${g.vram_total_gb} GB (${g.vram_used_pct}% used)` : "";
   const list = g.served_models || [];
-  models.innerHTML = list.map(id => {
-    const isNew = knownModels.size && !knownModels.has(id);  // flag freshly hot-loaded
+  const chips = list.map(id => {
+    const isNew = knownModels.size && !knownModels.has(id);
     return `<span class="m${isNew ? " new" : ""}">${id}</span>`;
   }).join("") || '<span class="gpu-models-label">no models loaded</span>';
   list.forEach(id => knownModels.add(id));
+
+  for (const suffix of ["", "-mini"]) {
+    const n = document.getElementById("gpu-name" + suffix);
+    const b = document.getElementById("gpu-bar" + suffix);
+    const v = document.getElementById("gpu-vram" + suffix);
+    const mEl = document.getElementById("gpu-models" + suffix);
+    if (n) n.textContent = name;
+    if (b) b.style.width = pct + "%";
+    if (v) v.textContent = vram;
+    if (mEl) mEl.innerHTML = chips;
+  }
+  if (g.available && g.card) {
+    document.getElementById("env-text").textContent = `1× ${g.card} · Fireworks burst tier`;
+  }
 }
 
-// ---- control buttons -------------------------------------------------------
+// ---------------- departments ----------------
+async function loadTenants() {
+  const rows = document.getElementById("tenant-rows");
+  try {
+    const list = await (await fetch(url("tenants"), { cache: "no-store" })).json();
+    rows.innerHTML = list.map(t => `<tr>
+      <td style="font-weight:600">${t.name}</td>
+      <td><span class="pill dot" style="--c:var(--s2)">${t.lora}</span></td>
+      <td><span class="key" data-key="${t.key}">••••••••</span>
+          <button class="copy" onclick="copyKey(this)">copy</button></td>
+      <td>${t.lora === "base" ? "AMD GPU · base" : "AMD GPU · local"}</td>
+    </tr>`).join("");
+  } catch (e) { rows.innerHTML = `<tr><td colspan="4" class="empty">failed to load: ${e}</td></tr>`; }
+}
+function copyKey(btn) {
+  const key = btn.previousElementSibling.dataset.key;
+  navigator.clipboard.writeText(key).then(() => { btn.textContent = "copied!"; setTimeout(() => btn.textContent = "copy", 1500); });
+}
+
+document.getElementById("dept-name").addEventListener("input", (ev) => {
+  const slug = ev.target.value.trim().toLowerCase().replaceAll(" ", "-");
+  document.getElementById("dept-path").value = slug ? `/workspace/adapters/${slug}-lora` : "";
+});
+
+document.getElementById("btn-onboard").onclick = async (ev) => {
+  const btn = ev.target; const msg = document.getElementById("onboard-msg");
+  const department = document.getElementById("dept-name").value.trim();
+  const adapter_path = document.getElementById("dept-path").value.trim();
+  if (!department || !adapter_path) { msg.textContent = "Enter a department name."; msg.className = "ctrl-msg err"; return; }
+  btn.disabled = true;
+  msg.textContent = "Hot-loading adapter into the running GPU… no restart."; msg.className = "ctrl-msg";
+  try {
+    const res = await fetch(url("admin/tenants"), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ department, adapter_path }),
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.detail || res.status);
+    msg.textContent = `✅ ${j.name} onboarded live — adapter served from the same card.`;
+    msg.className = "ctrl-msg ok";
+    loadTenants(); gpuTick();
+  } catch (e) {
+    msg.textContent = "❌ " + e; msg.className = "ctrl-msg err";
+  } finally { setTimeout(() => (btn.disabled = false), 1500); }
+};
+
+// ---------------- compliance ----------------
 function ctrlMsg(text, kind) {
   const el = document.getElementById("ctrl-msg");
   el.textContent = text; el.className = "ctrl-msg" + (kind ? " " + kind : "");
 }
-
-document.getElementById("btn-add").onclick = async (ev) => {
-  const btn = ev.target; btn.disabled = true;
-  ctrlMsg("Hot-loading hr-lora into the running GPU… no restart.");
-  try {
-    const res = await fetch(url("admin/tenants"), {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ department: "hr", adapter_path: "/workspace/adapters/hr-lora" }),
-    });
-    const j = await res.json();
-    if (!res.ok) throw new Error(j.detail || res.status);
-    ctrlMsg(`✅ HR onboarded live — API key ${j.api_key}, adapter served from the same card.`, "ok");
-    gpuTick();
-  } catch (e) {
-    ctrlMsg("❌ " + e + " (start vLLM with VLLM_ALLOW_RUNTIME_LORA_UPDATING=True and train hr-lora first)", "err");
-  } finally { setTimeout(() => (btn.disabled = false), 2000); }
-};
-
 document.getElementById("btn-audit").onclick = () => {
   window.open(url("audit.csv"), "_blank");
-  ctrlMsg("⬇ Compliance audit exported (hash-chained CSV).", "ok");
+  ctrlMsg("⬇ Audit trail exported (hash-chained CSV).", "ok");
 };
-
 document.getElementById("btn-verify").onclick = async () => {
   ctrlMsg("Re-walking the hash chain…");
   try {
     const j = await (await fetch(url("audit/verify"), { cache: "no-store" })).json();
-    ctrlMsg(j.ok ? `🔒 Audit chain intact — ${j.entries} tamper-evident entries verified.`
-                 : `⚠ Audit chain broken at entry ${j.broken_at_seq}!`, j.ok ? "ok" : "err");
+    ctrlMsg(j.ok ? `🔒 Chain intact — ${j.entries} tamper-evident entries verified.`
+                 : `⚠ Chain broken at entry ${j.broken_at_seq}!`, j.ok ? "ok" : "err");
   } catch (e) { ctrlMsg("❌ " + e, "err"); }
 };
 
-tick(); gpuTick();
+tick(); gpuTick(); loadTenants();
 setInterval(tick, 1500);
 setInterval(gpuTick, 3000);
 </script>

@@ -1,0 +1,24 @@
+Bastion — Proprietary Evaluation License
+
+Copyright (c) 2026 techstroll (github.com/techstroll). All rights reserved.
+
+Permission is granted to view and run this software solely for the purpose of
+evaluating it as a submission to the AMD Developer Hackathon: ACT II
+(lablab.ai) and for judging, demonstration, and educational review connected
+to that event.
+
+No other rights are granted. Without the copyright holder's prior written
+consent, you may not:
+  - use this software or derivatives in production or for any commercial
+    purpose;
+  - copy, modify, merge, publish, distribute, sublicense, or sell copies of
+    the software;
+  - use the "Bastion" name, branding, or visual identity.
+
+Third-party dependencies (FastAPI, vLLM, PyTorch, etc.) remain under their own
+licenses. The fine-tuning datasets in gpu/datasets/ are original works of the
+copyright holder.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
