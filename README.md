@@ -23,8 +23,24 @@ at once that normally require a GPU fleet:
 
 A cost/quality **router** fronts everything: trivial public queries burst to
 **Fireworks AI serverless** (cheap), normal queries hit the tenant's LoRA on
-the MI300X, hard queries go to the 70B path — and anything classified
+the AMD GPU, hard queries go to the larger-model path — and anything classified
 sensitive is **pinned to the box, no exceptions**.
+
+### Enterprise features
+
+- **Declassify-and-route** — PII-only queries are *masked* (SSN/email/phone/card
+  redacted), then the safe residual is served by the cheap external tier. Raw
+  sensitive egress stays **0**; a separate counter tracks declassified calls.
+  Keyword-sensitive content (NDA, "confidential merger") can't be safely masked,
+  so it stays local.
+- **Live department onboarding** — `POST /admin/tenants` hot-loads a new LoRA
+  into the running vLLM server (no restart, no new GPU). Proves "adding a tenant
+  costs megabytes, not a card."
+- **Live AMD GPU telemetry** — `GET /gpu` streams `rocm-smi` VRAM + the list of
+  models co-resident on the one card.
+- **Tamper-evident compliance audit** — every decision is hash-chained;
+  `GET /audit.csv` exports it and `GET /audit/verify` re-walks the chain to
+  prove no entry was altered.
 
 ```
 client (per-department API key)

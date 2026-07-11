@@ -15,16 +15,29 @@ VOICES = {
                   "RECOMMENDATION: route to counsel. This does not constitute legal advice.",
     "finance-lora": "FINANCE MEMO — [mock] 📊 NPV positive at 9% WACC. 💡 Bottom line: proceed. "
                     "Next step: full model in the board pack.",
+    "hr-lora": "HR GUIDANCE — [mock] 👥 Handled per the Employee Handbook. Partner with HR "
+               "on specifics. This is general guidance, not legal advice.",
 }
 DEFAULT = "[mock base-8B] Here is a helpful general answer."
+
+# adapters loaded at runtime via /v1/load_lora_adapter (mocks the hot-load)
+_LOADED = ["Qwen/Qwen2.5-7B-Instruct", "legal-lora", "finance-lora"]
 
 
 @app.get("/v1/models")
 async def models():
     return {"object": "list", "data": [
-        {"id": m, "object": "model"} for m in
-        ["Qwen/Qwen2.5-7B-Instruct", "legal-lora", "finance-lora"]
+        {"id": m, "object": "model"} for m in _LOADED
     ]}
+
+
+@app.post("/v1/load_lora_adapter")
+async def load_lora_adapter(request: Request):
+    body = await request.json()
+    name = body.get("lora_name", "")
+    if name and name not in _LOADED:
+        _LOADED.append(name)
+    return {"status": "success", "loaded": name}
 
 
 @app.post("/v1/chat/completions")

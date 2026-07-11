@@ -42,3 +42,25 @@ def resolve(api_key: str | None) -> Tenant | None:
     if not api_key:
         return None
     return TENANTS.get(api_key.removeprefix("Bearer ").strip())
+
+
+def register(department: str, lora: str) -> Tenant:
+    """Onboard a new department at runtime (paired with a hot-loaded adapter).
+
+    Derives a stable API key from the department slug so the demo can
+    immediately send traffic as the new tenant.
+    """
+    slug = department.strip().lower().replace(" ", "-")
+    key = f"bastion-{slug}-001"
+    tenant = Tenant(
+        key=key,
+        name=f"{department.strip().title()} Dept",
+        department=slug,
+        lora=lora,
+    )
+    TENANTS[key] = tenant
+    return tenant
+
+
+def all_tenants() -> list[Tenant]:
+    return list(TENANTS.values())

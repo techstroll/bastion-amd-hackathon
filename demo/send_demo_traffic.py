@@ -36,6 +36,10 @@ DEMO = [
     ("bastion-finance-001",
      "A patient invoice with account number 4532-1143-8765-3321 was sent to the "
      "wrong client. Draft the internal incident summary."),
+    # --- declassification: PII-only + trivial -> mask the PII, safely use the
+    #     cheap external tier. Raw egress stays 0; these show as "declassified".
+    ("bastion-general-001", "Translate to French: contact me at john.doe@acme.com"),
+    ("bastion-general-001", "What timezone is the office reachable at 415-555-0199?"),
 ]
 
 

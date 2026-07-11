@@ -73,6 +73,31 @@
   .reasons { color: var(--ink-muted); font-size: 11px; }
   .empty { color: var(--ink-muted); padding: 24px; text-align: center; }
   .tablewrap { overflow-x: auto; }
+
+  .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .btn {
+    background: var(--surface-1); color: var(--ink-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:hover { border-color: var(--s1); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .ctrl-msg { font-size: 12.5px; color: var(--ink-2); }
+  .ctrl-msg.ok { color: var(--good-text); font-weight: 600; }
+  .ctrl-msg.err { color: var(--critical); font-weight: 600; }
+
+  .gpu-name { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+  .gpu-barwrap { height: 22px; background: var(--grid); border-radius: 5px; overflow: hidden; }
+  .gpu-bar { height: 100%; width: 0; background: var(--s2); transition: width .4s; }
+  .gpu-vram { font-size: 12.5px; color: var(--ink-2); margin: 8px 0 16px; font-variant-numeric: tabular-nums; }
+  .gpu-models-label { font-size: 12px; color: var(--ink-muted); margin-bottom: 8px; }
+  .gpu-models { display: flex; gap: 7px; flex-wrap: wrap; }
+  .gpu-models .m {
+    font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px;
+    border: 1px solid var(--border); color: var(--ink-1);
+  }
+  .gpu-models .m.new { border-color: var(--s2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--s2) 30%, transparent); }
+  .pill.declass { color: var(--s3); }
 </style>
 </head>
 <body>
@@ -86,11 +111,19 @@
   <div class="tile"><div class="label">Total requests</div><div class="value" id="t-total">0</div></div>
   <div class="tile"><div class="label">Sensitive requests</div><div class="value" id="t-sens">0</div><div class="hint">PII / confidential detected</div></div>
   <div class="tile egress-ok" id="tile-egress">
-    <div class="label">Sensitive data egress</div>
+    <div class="label">Raw sensitive egress</div>
     <div class="value"><span id="t-egress">0</span><span class="badge" id="egress-badge">✓ SEALED</span></div>
-    <div class="hint">external calls carrying sensitive data</div>
+    <div class="hint">raw sensitive data that left the box</div>
   </div>
+  <div class="tile"><div class="label">Declassified &amp; routed</div><div class="value" id="t-declass">0</div><div class="hint">PII masked, safe residual sent to cheap tier</div></div>
   <div class="tile"><div class="label">Cost saved vs. cloud 70B API</div><div class="value" id="t-saved">$0.00</div><div class="hint">same queries priced at typical dedicated-cloud rates</div></div>
+</div>
+
+<div class="controls">
+  <button id="btn-add" class="btn">＋ Onboard HR department (live)</button>
+  <button id="btn-audit" class="btn">⬇ Export compliance audit (CSV)</button>
+  <button id="btn-verify" class="btn">🔒 Verify audit chain</button>
+  <span id="ctrl-msg" class="ctrl-msg"></span>
 </div>
 
 <div class="row">
@@ -101,17 +134,14 @@
     <div class="costline">Session spend <b id="c-actual">$0.00</b> <span id="c-vs"></span></div>
   </div>
   <div class="card">
-    <h2>Tenants on this card</h2>
-    <table>
-      <thead><tr><th>Department</th><th>Adapter</th><th>Where it runs</th></tr></thead>
-      <tbody>
-        <tr><td>Legal</td><td><span class="pill dot" style="--c: var(--s2)">legal-lora</span></td><td>AMD GPU · local</td></tr>
-        <tr><td>Finance</td><td><span class="pill dot" style="--c: var(--s2)">finance-lora</span></td><td>AMD GPU · local</td></tr>
-        <tr><td>General</td><td><span class="pill dot" style="--c: var(--s2)">base 8B</span></td><td>AMD GPU · local</td></tr>
-        <tr><td><em>all — hard queries</em></td><td><span class="pill dot" style="--c: var(--s3)">70B path</span></td><td>AMD GPU · local</td></tr>
-        <tr><td><em>all — trivial public</em></td><td><span class="pill dot" style="--c: var(--s1)">Fireworks 8B</span></td><td>serverless · external</td></tr>
-      </tbody>
-    </table>
+    <h2>AMD GPU — live telemetry</h2>
+    <div id="gpu-card">
+      <div class="gpu-name" id="gpu-name">reading rocm-smi…</div>
+      <div class="gpu-barwrap"><div class="gpu-bar" id="gpu-bar"></div></div>
+      <div class="gpu-vram" id="gpu-vram"></div>
+      <div class="gpu-models-label">Models resident on this ONE card:</div>
+      <div id="gpu-models" class="gpu-models"></div>
+    </div>
   </div>
 </div>
 
@@ -140,7 +170,8 @@ const fmt$ = v => "$" + v.toFixed(v < 0.01 && v > 0 ? 4 : 2);
 // whether served at the domain root or behind a path-prefixing proxy
 // (e.g. a notebook's .../proxy/9000/ URL).
 const DIR = location.pathname.endsWith("/") ? location.pathname : location.pathname + "/";
-const METRICS_URL = DIR + "metrics";
+const url = p => DIR + p;
+const METRICS_URL = url("metrics");
 
 function setStatus(msg) {
   let el = document.getElementById("conn-status");
@@ -175,6 +206,7 @@ async function tick() {
   const sealed = m.sensitive_egress === 0;
   tile.className = "tile " + (sealed ? "egress-ok" : "egress-bad");
   badge.textContent = sealed ? "✓ SEALED" : "⚠ BREACH";
+  document.getElementById("t-declass").textContent = m.declassified_external || 0;
   document.getElementById("t-saved").textContent = fmt$(Math.max(m.savings_usd, 0));
   document.getElementById("c-actual").textContent = fmt$(m.cost_usd);
   document.getElementById("c-vs").textContent =
@@ -205,21 +237,92 @@ async function tick() {
         r.sensitive ? `<span class="sens">⛔ SENSITIVE (${r.sensitivity_reasons.join(", ")})</span>` : "",
         `<span class="reasons">${r.difficulty} · ${r.difficulty_reasons.join(", ")}</span>`,
       ].filter(Boolean).join("<br>");
-      const lock = r.external ? "" : ` <span class="local-lock">🔒 stayed local</span>`;
+      // declassified: PII was masked, then the safe residual went external
+      const tag = r.declassified
+        ? ` <span class="pill declass">🛡 declassified (${(r.redactions||[]).join(", ")})</span>`
+        : (r.external ? "" : ` <span class="local-lock">🔒 stayed local</span>`);
       return `<tr>
         <td class="num">${r.ts}</td>
         <td>${r.department}</td>
         <td class="preview" title="${r.preview.replaceAll('"', "&quot;")}">${r.preview}</td>
         <td>${cls}</td>
-        <td><span class="pill dot" style="--c:${e.color}">${e.label}</span>${lock}</td>
+        <td><span class="pill dot" style="--c:${e.color}">${e.label}</span>${tag}</td>
         <td class="num">${r.latency_ms} ms</td>
         <td class="num">${fmt$(r.cost_usd)}</td>
       </tr>`;
     }).join("");
   }
 }
-tick();
+
+// ---- live AMD GPU telemetry ------------------------------------------------
+let knownModels = new Set();
+async function gpuTick() {
+  let g;
+  try { g = await (await fetch(url("gpu"), { cache: "no-store" })).json(); } catch { return; }
+  const name = document.getElementById("gpu-name");
+  const bar = document.getElementById("gpu-bar");
+  const vram = document.getElementById("gpu-vram");
+  const models = document.getElementById("gpu-models");
+
+  if (g.available) {
+    name.textContent = "🟢 " + (g.card || "AMD GPU");
+    if (g.vram_used_pct != null) {
+      bar.style.width = g.vram_used_pct + "%";
+      vram.textContent = `VRAM ${g.vram_used_gb} / ${g.vram_total_gb} GB (${g.vram_used_pct}% used)`;
+    } else { vram.textContent = "VRAM usage unavailable"; }
+  } else {
+    name.textContent = "⚪ GPU telemetry off (" + (g.reason || "not on a GPU host") + ")";
+    bar.style.width = "0%"; vram.textContent = "";
+  }
+
+  const list = g.served_models || [];
+  models.innerHTML = list.map(id => {
+    const isNew = knownModels.size && !knownModels.has(id);  // flag freshly hot-loaded
+    return `<span class="m${isNew ? " new" : ""}">${id}</span>`;
+  }).join("") || '<span class="gpu-models-label">no models loaded</span>';
+  list.forEach(id => knownModels.add(id));
+}
+
+// ---- control buttons -------------------------------------------------------
+function ctrlMsg(text, kind) {
+  const el = document.getElementById("ctrl-msg");
+  el.textContent = text; el.className = "ctrl-msg" + (kind ? " " + kind : "");
+}
+
+document.getElementById("btn-add").onclick = async (ev) => {
+  const btn = ev.target; btn.disabled = true;
+  ctrlMsg("Hot-loading hr-lora into the running GPU… no restart.");
+  try {
+    const res = await fetch(url("admin/tenants"), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ department: "hr", adapter_path: "/workspace/adapters/hr-lora" }),
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.detail || res.status);
+    ctrlMsg(`✅ HR onboarded live — API key ${j.api_key}, adapter served from the same card.`, "ok");
+    gpuTick();
+  } catch (e) {
+    ctrlMsg("❌ " + e + " (start vLLM with VLLM_ALLOW_RUNTIME_LORA_UPDATING=True and train hr-lora first)", "err");
+  } finally { setTimeout(() => (btn.disabled = false), 2000); }
+};
+
+document.getElementById("btn-audit").onclick = () => {
+  window.open(url("audit.csv"), "_blank");
+  ctrlMsg("⬇ Compliance audit exported (hash-chained CSV).", "ok");
+};
+
+document.getElementById("btn-verify").onclick = async () => {
+  ctrlMsg("Re-walking the hash chain…");
+  try {
+    const j = await (await fetch(url("audit/verify"), { cache: "no-store" })).json();
+    ctrlMsg(j.ok ? `🔒 Audit chain intact — ${j.entries} tamper-evident entries verified.`
+                 : `⚠ Audit chain broken at entry ${j.broken_at_seq}!`, j.ok ? "ok" : "err");
+  } catch (e) { ctrlMsg("❌ " + e, "err"); }
+};
+
+tick(); gpuTick();
 setInterval(tick, 1500);
+setInterval(gpuTick, 3000);
 </script>
 </body>
 </html>

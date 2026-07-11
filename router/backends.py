@@ -15,7 +15,9 @@ import httpx
 
 VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL", "http://localhost:8000/v1")
 VLLM_70B_URL = os.environ.get("VLLM_70B_URL", "")  # optional second instance
-FIREWORKS_BASE_URL = "https://api.fireworks.ai/inference/v1"
+FIREWORKS_BASE_URL = os.environ.get(
+    "FIREWORKS_BASE_URL", "https://api.fireworks.ai/inference/v1"
+)
 FIREWORKS_API_KEY = os.environ.get("FIREWORKS_API_KEY", "")
 FIREWORKS_CHEAP_MODEL = os.environ.get(
     "FIREWORKS_CHEAP_MODEL", "accounts/fireworks/models/gpt-oss-120b"
@@ -139,3 +141,78 @@ async def call_local_70b(client: httpx.AsyncClient, messages: list[dict]) -> Bac
         cost_usd=_cost("local-70b", p, c),
         would_cost_elsewhere_usd=_elsewhere(p, c),
     )
+
+
+# ---------------------------------------------------------------- operations
+
+async def list_served_models(client: httpx.AsyncClient) -> list[str]:
+    """Model + adapter IDs currently loaded in the local vLLM server."""
+    try:
+        resp = await client.get(f"{VLLM_BASE_URL}/models", timeout=5)
+        resp.raise_for_status()
+        return [m["id"] for m in resp.json().get("data", [])]
+    except Exception:
+        return []
+
+
+async def load_lora_adapter(
+    client: httpx.AsyncClient, name: str, path: str
+) -> None:
+    """Hot-load a LoRA adapter into the running vLLM server — no restart.
+
+    Requires the server to be started with
+    VLLM_ALLOW_RUNTIME_LORA_UPDATING=True. This is the live "add a new
+    department in 60 seconds" moment: one API call, the adapter is served.
+    """
+    resp = await client.post(
+        f"{VLLM_BASE_URL}/load_lora_adapter",
+        json={"lora_name": name, "lora_path": path},
+        timeout=120,
+    )
+    if resp.status_code >= 400:
+        raise RuntimeError(f"vLLM load_lora_adapter failed: {resp.status_code} {resp.text}")
+
+
+def gpu_telemetry() -> dict:
+    """Parse `rocm-smi` for a live VRAM view — the AMD-hardware flex.
+
+    Returns a dict the dashboard renders. Degrades gracefully (available:False)
+    off-GPU so the router still runs on a laptop with the mock backend.
+    """
+    import re
+    import shutil
+    import subprocess
+
+    if not shutil.which("rocm-smi"):
+        return {"available": False, "reason": "rocm-smi not found (not on an AMD GPU host)"}
+    try:
+        out = subprocess.run(
+            ["rocm-smi", "--showmeminfo", "vram", "--showproductname"],
+            capture_output=True, text=True, timeout=10,
+        ).stdout
+    except Exception as e:  # pragma: no cover
+        return {"available": False, "reason": str(e)}
+
+    total = used = None
+    for line in out.splitlines():
+        if "VRAM Total Memory" in line:
+            m = re.search(r"(\d+)", line.split(":")[-1])
+            if m:
+                total = int(m.group(1))
+        elif "VRAM Total Used Memory" in line:
+            m = re.search(r"(\d+)", line.split(":")[-1])
+            if m:
+                used = int(m.group(1))
+    card = None
+    m = re.search(r"Card Series:\s*(.+)", out) or re.search(r"Card Model:\s*(.+)", out)
+    if m:
+        card = m.group(1).strip()
+
+    gb = 1024 ** 3
+    return {
+        "available": True,
+        "card": card or "AMD GPU",
+        "vram_total_gb": round(total / gb, 1) if total else None,
+        "vram_used_gb": round(used / gb, 2) if used else None,
+        "vram_used_pct": round(100 * used / total, 1) if (total and used) else None,
+    }

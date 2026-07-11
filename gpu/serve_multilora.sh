@@ -18,6 +18,10 @@ ADAPTERS=/workspace/adapters
 echo "=== Bastion serving layer ==="
 rocm-smi --showmeminfo vram || true
 
+# Allow adapters to be hot-loaded into the running server via the API — this
+# powers the live "add a new department in 60 seconds" demo (POST /admin/tenants).
+export VLLM_ALLOW_RUNTIME_LORA_UPDATING=True
+
 # --- base + multi-LoRA (tenant tier) ----------------------------------------
 vllm serve "$BASE_MODEL" \
   --port 8000 \

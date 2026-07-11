@@ -36,13 +36,37 @@ class Classification:
     sensitivity_reasons: list[str]
     difficulty: str  # "trivial" | "normal" | "hard"
     difficulty_reasons: list[str]
+    pii_types: list[str]       # which PII patterns matched (redactable)
+    keyword_sensitive: bool    # confidential/NDA-type — cannot be safely redacted
+
+    @property
+    def redactable(self) -> bool:
+        # Sensitivity comes ONLY from PII we can mask (no free-text secrets like
+        # "confidential merger terms" that redaction can't neutralize).
+        return bool(self.pii_types) and not self.keyword_sensitive
 
 
-def classify_sensitivity(text: str) -> tuple[bool, list[str]]:
-    reasons = [name for name, pat in _PII_PATTERNS if pat.search(text)]
-    if _SENSITIVE_KEYWORDS.search(text):
-        reasons.append("sensitive-keyword")
-    return (len(reasons) > 0, reasons)
+def classify_sensitivity(text: str) -> tuple[bool, list[str], list[str], bool]:
+    pii_types = [name for name, pat in _PII_PATTERNS if pat.search(text)]
+    keyword = bool(_SENSITIVE_KEYWORDS.search(text))
+    reasons = list(pii_types) + (["sensitive-keyword"] if keyword else [])
+    return (len(reasons) > 0, reasons, pii_types, keyword)
+
+
+def redact(text: str) -> tuple[str, list[str]]:
+    """Mask every PII span so the residual text is safe to send off-box.
+
+    Returns (redacted_text, list_of_redaction_labels). Keyword-sensitivity is
+    NOT handled here — that content can't be neutralized by masking and must
+    stay local.
+    """
+    applied: list[str] = []
+    out = text
+    for name, pat in _PII_PATTERNS:
+        if pat.search(out):
+            out = pat.sub(f"[REDACTED_{name.upper()}]", out)
+            applied.append(name)
+    return out, applied
 
 
 # ---------------------------------------------------------------- difficulty
@@ -83,6 +107,8 @@ def classify_difficulty(text: str) -> tuple[str, list[str]]:
 
 
 def classify(text: str) -> Classification:
-    sensitive, s_reasons = classify_sensitivity(text)
+    sensitive, s_reasons, pii_types, keyword = classify_sensitivity(text)
     difficulty, d_reasons = classify_difficulty(text)
-    return Classification(sensitive, s_reasons, difficulty, d_reasons)
+    return Classification(
+        sensitive, s_reasons, difficulty, d_reasons, pii_types, keyword
+    )

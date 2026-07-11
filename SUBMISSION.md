@@ -22,12 +22,21 @@
 ## Demo video beats (2–3 min)
 
 1. The problem: fleet-per-department + data egress (10 s)
-2. `rocm-smi`: base + 2 LoRAs (+ 70B) on ONE 192 GB MI300X (20 s)
-3. Live: trivial query → Fireworks, cost ticker (20 s)
-4. Live: confidential clause → legal-lora, 🔒 stayed local, egress = 0 (30 s)
-5. Same question, legal vs finance tenant → two voices, one GPU (30 s)
-6. Hard query → 70B path (15 s)
-7. Dashboard wide shot + unit economics slide (30 s)
+2. **GPU telemetry panel** (right card): base + legal + finance LoRAs all
+   resident on ONE Radeon W7900 — "one card, many models" (20 s)
+3. Run `demo/send_demo_traffic.py`, narrate the live table:
+   - trivial public → Fireworks, cost ticker moves (15 s)
+   - confidential NDA → legal-lora, 🔒 **stayed local**, raw egress = 0 (20 s)
+   - **declassified**: email/phone query → 🛡 PII masked, safely external,
+     egress STILL 0 — "we don't just block, we minimize" (25 s)
+   - same question legal vs finance → two voices, one GPU (20 s)
+   - hard query → larger-model path (10 s)
+4. **Click "＋ Onboard HR department (live)"** → HR adapter hot-loads into the
+   running GPU, new pill appears in the telemetry panel, then send an HR query.
+   The mic-drop: "new department, zero restart, zero new hardware." (30 s)
+5. **Click "Export compliance audit"** + "Verify audit chain" → tamper-evident
+   CSV, chain verified (15 s)
+6. Dashboard wide shot: egress 0, declassified N, cost saved, unit economics (20 s)
 
 ## lablab.ai submission form
 
@@ -37,4 +46,5 @@
 - [ ] Team + track (Track 3 — Unicorn)
 - [ ] Blurb: "Every department gets its own fine-tuned model, sensitive data
       never leaves the GPU, and a router keeps cost minimal per query — all on
-      a single AMD Instinct MI300X."
+      a single AMD GPU. Live department onboarding, PII declassification, and
+      a tamper-evident compliance audit — scales straight to MI300X."
