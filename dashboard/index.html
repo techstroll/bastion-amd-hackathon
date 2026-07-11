@@ -160,6 +160,7 @@
     border-radius: 99px; padding: 5px 11px; font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;
   }
   .chip-btn:hover { border-color: var(--brand); color: var(--ink-1); }
+  .chip-btn.active { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
   .pg-input {
     width: 100%; background: var(--surface-2); color: var(--ink-1);
     border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font: inherit; resize: vertical;
@@ -204,6 +205,7 @@
     <button class="nav-btn active" data-page="overview">◈ Overview</button>
     <button class="nav-btn" data-page="playground">💬 Playground</button>
     <button class="nav-btn" data-page="departments">⊞ Departments</button>
+    <button class="nav-btn" data-page="knowledge">📚 Knowledge</button>
     <button class="nav-btn" data-page="compliance">🛡 Compliance</button>
     <button class="nav-btn" data-page="gpu">▣ GPU</button>
     <div class="side-foot">Private AI cloud-in-a-box<br>© 2026 Bastion · All rights reserved</div>
@@ -330,6 +332,59 @@
       </div>
     </section>
 
+    <!-- ============ KNOWLEDGE & TRAINING ============ -->
+    <section id="page-knowledge" hidden>
+      <div class="row">
+        <div class="card">
+          <h2>Department knowledge base</h2>
+          <p style="color:var(--ink-2);font-size:12.5px;margin-bottom:12px">
+            Training examples fine-tune each department's model; documents feed its
+            retrieval knowledge base. Counts below are seeded from the built-in datasets.
+          </p>
+          <div class="tablewrap">
+          <table>
+            <thead><tr><th>Department</th><th class="num">Training examples</th><th class="num">Documents</th></tr></thead>
+            <tbody id="kb-rows"><tr><td colspan="3" class="empty">loading…</td></tr></tbody>
+          </table>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Add knowledge &amp; fine-tune</h2>
+          <div class="onboard">
+            <div>
+              <label for="kb-dept">Department</label>
+              <input id="kb-dept" placeholder="e.g. aml, wealth, or a new one" autocomplete="off">
+            </div>
+            <div>
+              <label>What are you adding?</label>
+              <div style="display:flex;gap:8px">
+                <button class="chip-btn kb-kind active" data-kind="examples">Training examples (JSONL)</button>
+                <button class="chip-btn kb-kind" data-kind="document">Knowledge document</button>
+              </div>
+            </div>
+            <div>
+              <label id="kb-input-label" for="kb-text">Paste JSONL, or upload a file</label>
+              <textarea id="kb-text" class="pg-input" rows="5" placeholder='{"prompt": "…", "response": "…"}
+{"prompt": "…", "response": "…"}'></textarea>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <input type="file" id="kb-file" accept=".jsonl,.txt,.md,.json" style="font-size:12px;color:var(--ink-2)">
+              <button class="btn secondary" id="kb-add">Add to knowledge</button>
+            </div>
+            <span id="kb-msg" class="ctrl-msg"></span>
+
+            <hr style="border:0;border-top:1px solid var(--grid);margin:6px 0">
+            <button class="btn" id="kb-train">⚙ Fine-tune adapter</button>
+            <div id="kb-progress" hidden>
+              <div class="gpu-barwrap"><div class="gpu-bar" id="kb-bar"></div></div>
+              <div class="gpu-vram" id="kb-progress-text"></div>
+            </div>
+            <span id="kb-train-msg" class="ctrl-msg"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ COMPLIANCE ============ -->
     <section id="page-compliance" hidden>
       <div class="tiles">
@@ -400,8 +455,8 @@ function setStatus(msg) {
 }
 
 // ---------------- navigation ----------------
-const PAGES = ["overview", "playground", "departments", "compliance", "gpu"];
-const TITLES = { overview: "Overview", playground: "Playground", departments: "Departments", compliance: "Compliance", gpu: "GPU" };
+const PAGES = ["overview", "playground", "departments", "knowledge", "compliance", "gpu"];
+const TITLES = { overview: "Overview", playground: "Playground", departments: "Departments", knowledge: "Knowledge & Training", compliance: "Compliance", gpu: "GPU" };
 document.querySelectorAll(".nav-btn").forEach(btn => {
   btn.onclick = () => {
     PAGES.forEach(p => document.getElementById("page-" + p).hidden = p !== btn.dataset.page);
@@ -409,6 +464,7 @@ document.querySelectorAll(".nav-btn").forEach(btn => {
     document.getElementById("page-title").textContent = TITLES[btn.dataset.page];
     if (btn.dataset.page === "departments") loadTenants();
     if (btn.dataset.page === "playground") loadPlaygroundTenants();
+    if (btn.dataset.page === "knowledge") loadKnowledge();
   };
 });
 
@@ -646,6 +702,105 @@ document.getElementById("pg-send").onclick = async () => {
     status.textContent = "❌ " + e; status.className = "ctrl-msg err";
   }
 };
+
+// ---------------- knowledge & training ----------------
+let kbKind = "examples";
+async function loadKnowledge() {
+  const rows = document.getElementById("kb-rows");
+  try {
+    const kb = await (await fetch(url("admin/knowledge"), { cache: "no-store" })).json();
+    const entries = Object.entries(kb);
+    rows.innerHTML = entries.length ? entries.map(([d, v]) => `<tr>
+      <td style="font-weight:600;text-transform:capitalize">${d}</td>
+      <td class="num">${v.examples}</td>
+      <td class="num">${v.docs}</td>
+    </tr>`).join("") : `<tr><td colspan="3" class="empty">no knowledge yet</td></tr>`;
+  } catch (e) { rows.innerHTML = `<tr><td colspan="3" class="empty">failed: ${e}</td></tr>`; }
+}
+
+document.querySelectorAll(".kb-kind").forEach(b => {
+  b.onclick = () => {
+    kbKind = b.dataset.kind;
+    document.querySelectorAll(".kb-kind").forEach(x => x.classList.toggle("active", x === b));
+    document.getElementById("kb-input-label").textContent = kbKind === "examples"
+      ? "Paste JSONL (prompt/response per line), or upload a file"
+      : "Paste document text, or upload a .txt / .md file";
+  };
+});
+
+document.getElementById("kb-file").addEventListener("change", (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { document.getElementById("kb-text").value = r.result; };
+  r.readAsText(f);
+});
+
+document.getElementById("kb-add").onclick = async () => {
+  const dept = document.getElementById("kb-dept").value.trim();
+  const content = document.getElementById("kb-text").value.trim();
+  const fname = document.getElementById("kb-file").files[0]?.name || "pasted";
+  const msg = document.getElementById("kb-msg");
+  if (!dept || !content) { msg.textContent = "Department + content required."; msg.className = "ctrl-msg err"; return; }
+  msg.textContent = "Adding…"; msg.className = "ctrl-msg";
+  try {
+    const body = kbKind === "document"
+      ? { department: dept, kind: "document", name: fname, content }
+      : { department: dept, kind: "examples", content };
+    const res = await fetch(url("admin/knowledge"), {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.detail || res.status);
+    msg.textContent = kbKind === "document"
+      ? `✅ Document added (${j.added.chars} chars). ${j.docs} docs, ${j.examples} examples now.`
+      : `✅ Added ${j.added} examples. ${j.examples} total for ${j.department}.`;
+    msg.className = "ctrl-msg ok";
+    document.getElementById("kb-text").value = "";
+    loadKnowledge();
+  } catch (e) { msg.textContent = "❌ " + e; msg.className = "ctrl-msg err"; }
+};
+
+document.getElementById("kb-train").onclick = async () => {
+  const dept = document.getElementById("kb-dept").value.trim().toLowerCase();
+  const msg = document.getElementById("kb-train-msg");
+  if (!dept) { msg.textContent = "Enter a department to fine-tune."; msg.className = "ctrl-msg err"; return; }
+  msg.textContent = "Starting fine-tune…"; msg.className = "ctrl-msg";
+  try {
+    const res = await fetch(url("admin/train"), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ department: dept }),
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.detail || res.status);
+    document.getElementById("kb-progress").hidden = false;
+    msg.textContent = j.simulated
+      ? `Training (showcase sim) · ${j.examples} examples · maps to: ${j.command}`
+      : `Training on GPU · ${j.command}`;
+    msg.className = "ctrl-msg";
+    pollTrain(dept);
+  } catch (e) { msg.textContent = "❌ " + e; msg.className = "ctrl-msg err"; }
+};
+
+async function pollTrain(dept) {
+  const bar = document.getElementById("kb-bar");
+  const txt = document.getElementById("kb-progress-text");
+  const msg = document.getElementById("kb-train-msg");
+  const iv = setInterval(async () => {
+    let j;
+    try { j = await (await fetch(url("admin/train/status?department=" + dept), { cache: "no-store" })).json(); }
+    catch { return; }
+    bar.style.width = (j.progress || 0) + "%";
+    txt.textContent = j.status === "done"
+      ? `✓ Complete — adapter ${j.adapter} ready.`
+      : `epoch ${j.epoch}/${j.total_epochs} · loss ${j.loss ?? "…"} · ${j.progress || 0}%`;
+    if (j.status === "done") {
+      clearInterval(iv);
+      msg.innerHTML = `✅ Fine-tune complete. Onboard it on the <b>Departments</b> page (adapter: <code>${j.adapter}</code>).`;
+      msg.className = "ctrl-msg ok";
+    }
+  }, 500);
+}
 
 // ---------------- compliance ----------------
 function ctrlMsg(text, kind) {

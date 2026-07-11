@@ -31,13 +31,14 @@ import httpx
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
-from . import backends, demo_mode, metrics, tenants
+from . import backends, demo_mode, knowledge, metrics, tenants
 from .classifier import classify, redact
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.http = httpx.AsyncClient()
+    knowledge.load_builtin()  # seed real example counts from gpu/datasets/*.jsonl
     seed_task = None
     if demo_mode.is_on():
         demo_mode.activate()
@@ -136,6 +137,67 @@ async def audit_csv():
 @app.get("/audit/verify")
 async def audit_verify():
     return JSONResponse(metrics.audit_verify(), headers=NO_STORE)
+
+
+@app.get("/admin/knowledge")
+async def knowledge_summary():
+    """Per-department example + document counts (seeded from the built-in datasets)."""
+    return JSONResponse(knowledge.summary(), headers=NO_STORE)
+
+
+@app.post("/admin/knowledge")
+async def knowledge_add(request: Request):
+    """Add training examples or a knowledge document to a department.
+
+    Body one of:
+      {"department": "...", "kind": "examples", "content": "<jsonl>"}
+      {"department": "...", "kind": "examples", "examples": [{"prompt","response"}]}
+      {"department": "...", "kind": "document", "name": "policy.txt", "content": "<text>"}
+    """
+    body = await request.json()
+    dept = (body.get("department") or "").strip().lower().replace(" ", "-")
+    if not dept:
+        raise HTTPException(400, "department required")
+    kind = body.get("kind", "examples")
+
+    if kind == "document":
+        text = body.get("content", "")
+        if not text.strip():
+            raise HTTPException(400, "empty document")
+        entry = knowledge.add_document(dept, body.get("name", "document"), text)
+        return {"department": dept, "kind": "document", "added": entry,
+                **knowledge.department_detail(dept)}
+
+    examples = body.get("examples")
+    if not examples and body.get("content"):
+        examples = knowledge.parse_jsonl(body["content"])
+    if not examples:
+        raise HTTPException(400, "no valid prompt/response examples found "
+                                 "(expected JSONL lines with 'prompt' and 'response')")
+    added = knowledge.add_examples(dept, examples)
+    return {"department": dept, "kind": "examples", "added": added,
+            **knowledge.department_detail(dept)}
+
+
+@app.post("/admin/train")
+async def train(request: Request):
+    """Start a fine-tuning job for a department's accumulated examples.
+
+    Simulated in showcase mode; on a real GPU host the job maps to
+    gpu/finetune_lora.py (command surfaced in the job status)."""
+    body = await request.json()
+    dept = (body.get("department") or "").strip().lower().replace(" ", "-")
+    if not dept:
+        raise HTTPException(400, "department required")
+    job = knowledge.start_training(dept, simulate=demo_mode.is_on())
+    if "error" in job:
+        raise HTTPException(400, job["error"])
+    return job
+
+
+@app.get("/admin/train/status")
+async def train_status(department: str):
+    return JSONResponse(knowledge.job_status(department.strip().lower()), headers=NO_STORE)
 
 
 @app.post("/admin/seed")

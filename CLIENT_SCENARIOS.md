@@ -56,7 +56,24 @@ count, and two buttons: **Export audit trail (CSV)** and **Verify chain
 integrity**. Every decision is hash-chained — verification re-walks the chain
 and proves nothing was altered.
 
-## Screen 5 — GPU (the AMD hardware story)
+## Screen 5 — Knowledge & Training (make a department smarter)
+
+**What the admin sees:** a table of every department with its **training
+example** count (seeded from the committed `gpu/datasets/*.jsonl`) and
+**document** count. A panel to:
+- pick/name a department,
+- add **training examples** (paste JSONL or upload a `.jsonl` file) — these
+  fine-tune the department's LoRA,
+- or add a **knowledge document** (paste text or upload `.txt`/`.md`) — feeds
+  the retrieval knowledge base,
+- click **Fine-tune adapter** → a job runs with a live progress bar
+  (epoch / loss / %), and on completion tells you to onboard it.
+
+**On a real GPU host** the job maps to `python gpu/finetune_lora.py --tenant
+<dept>`; in the showcase it's simulated (labeled). The whole loop —
+add knowledge → train → onboard — is visible in the browser.
+
+## Screen 6 — GPU (the AMD hardware story)
 
 **What the client sees:** live VRAM usage bar and the list of every model +
 adapter resident **on the one card** — the "one GPU, many departments" proof,
