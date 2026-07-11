@@ -135,11 +135,38 @@ const ENGINES = {
 };
 const fmt$ = v => "$" + v.toFixed(v < 0.01 && v > 0 ? 4 : 2);
 
+// Force-treat the current URL as a directory (append trailing slash if the
+// proxy stripped it) so "metrics" always resolves next to this page,
+// whether served at the domain root or behind a path-prefixing proxy
+// (e.g. a notebook's .../proxy/9000/ URL).
+const DIR = location.pathname.endsWith("/") ? location.pathname : location.pathname + "/";
+const METRICS_URL = DIR + "metrics";
+
+function setStatus(msg) {
+  let el = document.getElementById("conn-status");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "conn-status";
+    el.style.cssText = "position:fixed;top:8px;right:8px;padding:6px 12px;" +
+      "border-radius:6px;font-size:12px;font-family:monospace;z-index:99;" +
+      "background:#d03b3b;color:#fff;";
+    document.body.appendChild(el);
+  }
+  if (msg) { el.textContent = msg; el.style.display = "block"; }
+  else { el.remove(); }
+}
+
 async function tick() {
   let m;
-  // relative (no leading slash) so this works behind a path-prefixing proxy
-  // (e.g. the notebook's .../proxy/9000/ URL), not just at the domain root
-  try { m = await (await fetch("metrics")).json(); } catch { return; }
+  try {
+    const res = await fetch(METRICS_URL, { cache: "no-store" });
+    if (!res.ok) { setStatus(`metrics ${res.status} @ ${METRICS_URL}`); return; }
+    m = await res.json();
+    setStatus(null);
+  } catch (e) {
+    setStatus(`fetch failed @ ${METRICS_URL}: ${e}`);
+    return;
+  }
 
   document.getElementById("t-total").textContent = m.total_requests;
   document.getElementById("t-sens").textContent = m.sensitive_requests;

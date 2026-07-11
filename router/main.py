@@ -36,7 +36,9 @@ DASHBOARD = Path(__file__).resolve().parent.parent / "dashboard" / "index.html"
 
 @app.get("/")
 async def dashboard():
-    return FileResponse(DASHBOARD)
+    # no-store: a stale cached copy of this page (e.g. behind a notebook's
+    # proxy) is the #1 cause of "the dashboard shows old/wrong data"
+    return FileResponse(DASHBOARD, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/metrics")
