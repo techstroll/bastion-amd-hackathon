@@ -79,7 +79,7 @@
 <header>
   <h1>🏰 Bastion</h1>
   <span class="sub">Private AI cloud-in-a-box — live routing</span>
-  <span class="amd">1× AMD Instinct MI300X (192 GB) + Fireworks AI burst tier</span>
+  <span class="amd">1× AMD GPU (Radeon PRO W7900) + Fireworks AI burst tier</span>
 </header>
 
 <div class="tiles">
@@ -105,10 +105,10 @@
     <table>
       <thead><tr><th>Department</th><th>Adapter</th><th>Where it runs</th></tr></thead>
       <tbody>
-        <tr><td>Legal</td><td><span class="pill dot" style="--c: var(--s2)">legal-lora</span></td><td>MI300X · local</td></tr>
-        <tr><td>Finance</td><td><span class="pill dot" style="--c: var(--s2)">finance-lora</span></td><td>MI300X · local</td></tr>
-        <tr><td>General</td><td><span class="pill dot" style="--c: var(--s2)">base 8B</span></td><td>MI300X · local</td></tr>
-        <tr><td><em>all — hard queries</em></td><td><span class="pill dot" style="--c: var(--s3)">70B path</span></td><td>MI300X · local</td></tr>
+        <tr><td>Legal</td><td><span class="pill dot" style="--c: var(--s2)">legal-lora</span></td><td>AMD GPU · local</td></tr>
+        <tr><td>Finance</td><td><span class="pill dot" style="--c: var(--s2)">finance-lora</span></td><td>AMD GPU · local</td></tr>
+        <tr><td>General</td><td><span class="pill dot" style="--c: var(--s2)">base 8B</span></td><td>AMD GPU · local</td></tr>
+        <tr><td><em>all — hard queries</em></td><td><span class="pill dot" style="--c: var(--s3)">70B path</span></td><td>AMD GPU · local</td></tr>
         <tr><td><em>all — trivial public</em></td><td><span class="pill dot" style="--c: var(--s1)">Fireworks 8B</span></td><td>serverless · external</td></tr>
       </tbody>
     </table>
@@ -130,8 +130,8 @@
 <script>
 const ENGINES = {
   "fireworks-8b":  { label: "Fireworks 8B (external)", color: "var(--s1)" },
-  "local-8b-lora": { label: "MI300X · tenant LoRA",    color: "var(--s2)" },
-  "local-70b":     { label: "MI300X · 70B path",       color: "var(--s3)" },
+  "local-8b-lora": { label: "AMD GPU · tenant LoRA",    color: "var(--s2)" },
+  "local-70b":     { label: "AMD GPU · larger model path",       color: "var(--s3)" },
 };
 const fmt$ = v => "$" + v.toFixed(v < 0.01 && v > 0 ? 4 : 2);
 

@@ -17,13 +17,17 @@ like a CFO) but face a three-way bind:
 
 ## The insight
 
-**AMD Instinct MI300X changes the serving math.** 192 GB of HBM3 on a single
-card holds: an 8B base + *dozens* of per-department LoRA adapters + a 70B for
-hard queries — simultaneously. Train the adapters on the same card. Nothing
-ever leaves the box.
+**AMD's high-VRAM cards change the serving math.** A single AMD GPU (this
+build runs on a 48 GB Radeon PRO W7900; AMD Instinct MI300X scales the same
+architecture to 192 GB) holds an 8B base + *many* per-department LoRA
+adapters simultaneously, with room to add a larger model for hard queries as
+capacity allows. Train the adapters on the same card. Nothing ever leaves
+the box.
 
 What used to be a GPU fleet + an MLOps team + a compliance program is now
-**one card and a router**.
+**one card and a router** — and it scales headroom-for-headroom as you move
+up AMD's GPU line, all the way to MI300X's 192 GB for dozens of tenants on
+one box.
 
 ## The product
 
@@ -39,23 +43,26 @@ An appliance (or dedicated-cloud instance) + a gateway:
 
 ## Why now, why AMD
 
-- MI300X dedicated-cloud pricing ($1.99/hr on AMD Developer Cloud) makes
-  owned-inference economics available to mid-market, not just hyperscalers.
+- AMD Developer Cloud makes dedicated GPU economics available to mid-market,
+  not just hyperscalers — this build runs today on a Radeon PRO W7900.
 - vLLM multi-LoRA on ROCm is production-grade **today** — this demo runs on
   the stock ROCm 7.2 + vLLM 0.16 image, zero custom kernels.
-- The 192 GB single-card capacity is an AMD-specific moat: the same build on
-  80 GB cards needs 2–3× the hardware and cross-GPU orchestration.
+- The architecture scales directly to AMD Instinct MI300X (192 GB HBM3):
+  the same base+adapters+router design that serves a handful of tenants on
+  48 GB serves dozens on 192 GB, with zero code changes — just more VRAM.
 
 ## Unit economics (demo-scale illustration)
 
-| | Per-token API (70B-class) | Bastion on 1× MI300X |
+| | Per-token API (70B-class) | Bastion on 1× AMD GPU |
 |---|---|---|
 | 10 departments, fine-tuned | 10 dedicated deployments | 1 GPU, 10 adapters |
 | $/1M tokens (blended) | ~$0.90 | ~$0.06–0.15 |
 | Sensitive-data egress | vendor DPA + review | **zero by construction** |
 | Add a department | new deployment | `finetune_lora.py --tenant X` (minutes) |
 
-At ~$38K/mo of API spend, breakeven on a dedicated MI300X is under a month.
+At ~$38K/mo of API spend, breakeven on a dedicated AMD GPU instance is under
+a month — and the same math only gets better on MI300X, where one card can
+host the entire multi-department fleet.
 
 ## Go-to-market
 
@@ -73,4 +80,4 @@ multi-LoRA serving + on-box fine-tuning + sensitivity/cost router + live
 egress-and-cost dashboard, containerized. Everything in the demo is real
 infrastructure — no slides-ware.
 
-**One MI300X. Every department. Zero egress.**
+**One AMD GPU. Every department. Zero egress.**

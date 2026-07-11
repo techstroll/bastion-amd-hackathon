@@ -4,12 +4,13 @@
 
 > Every department gets its own fine-tuned model, sensitive data never leaves
 > the GPU, and a router keeps cost minimal per query — all on a **single AMD
-> Instinct MI300X**.
+> GPU (Radeon PRO W7900 in this build; scales to MI300X)**.
 
 ## Why one GPU can be a whole AI cloud
 
-The MI300X has **192 GB of HBM3 on one card**. That single fact enables three
-things at once that normally require a GPU fleet:
+A single AMD GPU with enough VRAM (this build: a 48 GB Radeon PRO W7900; an
+AMD Instinct MI300X scales the same design to 192 GB) enables three things
+at once that normally require a GPU fleet:
 
 1. **Multi-tenant serving** — one 8B base model + a LoRA adapter *per
    department*, all resident simultaneously (vLLM multi-LoRA). Adding a tenant
@@ -33,8 +34,8 @@ client (per-department API key)
 │ tenant lookup → sensitivity check → difficulty check            │
 │                                                                  │
 │ trivial + public ──► Fireworks serverless 8B      (external, $) │
-│ normal ────────────► MI300X: base 8B + tenant LoRA (local)      │
-│ hard ──────────────► MI300X: 70B path              (local)      │
+│ normal ────────────► AMD GPU: base 8B + tenant LoRA (local)     │
+│ hard ──────────────► AMD GPU: larger model path     (local)     │
 │ sensitive ─────────► NEVER leaves the box                       │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -44,7 +45,7 @@ client (per-department API key)
 | Path | What |
 |---|---|
 | `router/` | FastAPI gateway: OpenAI-compatible `/v1/chat/completions`, classifiers, backends, metrics |
-| `gpu/` | Runs on the MI300X (AMD Developer Cloud notebook): LoRA fine-tune + vLLM multi-LoRA launch |
+| `gpu/` | Runs on the AMD GPU (AMD Developer Cloud notebook): LoRA fine-tune + vLLM multi-LoRA launch |
 | `dashboard/` | Live routing dashboard (served by the router at `/`) |
 | `demo/` | Scripted demo traffic + a mock vLLM for GPU-free local testing |
 | `pitch/` | Startup pitch one-pager |
@@ -59,7 +60,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 open http://localhost:9000        # live dashboard
 ```
 
-## Full deployment (AMD Developer Cloud MI300X)
+## Full deployment (AMD Developer Cloud)
 
 Inside the ADC notebook (**ROCm 7.2 + vLLM 0.16.0 + PyTorch 2.9** image):
 
@@ -85,9 +86,9 @@ python demo/send_demo_traffic.py
 
 | API key | Department | Engine |
 |---|---|---|
-| `bastion-legal-001` | Legal | `legal-lora` on MI300X |
-| `bastion-finance-001` | Finance | `finance-lora` on MI300X |
-| `bastion-general-001` | General | base 8B on MI300X |
+| `bastion-legal-001` | Legal | `legal-lora` on AMD GPU |
+| `bastion-finance-001` | Finance | `finance-lora` on AMD GPU |
+| `bastion-general-001` | General | base 8B on AMD GPU |
 
 ```bash
 curl localhost:9000/v1/chat/completions \
@@ -100,8 +101,8 @@ tenant, engine, sensitivity + reasons, difficulty + reasons, latency, cost.
 
 ## Stack
 
-AMD Instinct MI300X (192 GB) · ROCm 7.2 · vLLM 0.16.0 multi-LoRA · PyTorch 2.9
-+ PEFT · Fireworks AI serverless (Llama-3.1-8B) · FastAPI · Docker
+AMD GPU (Radeon PRO W7900, ROCm 6.2) · vLLM 0.16.0 multi-LoRA · PyTorch 2.5
++ PEFT · Qwen2.5-7B-Instruct base · Fireworks AI serverless · FastAPI · Docker
 
 ## The pitch
 
