@@ -146,6 +146,36 @@
 
   section[hidden] { display: none; }
 
+  /* playground */
+  .pg-controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; margin-bottom: 12px; }
+  .pg-controls label { display: block; font-size: 12px; color: var(--ink-2); font-weight: 600; margin-bottom: 6px; }
+  .pg-select {
+    background: var(--surface-2); color: var(--ink-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; font: inherit; min-width: 200px;
+  }
+  .pg-quick { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+  .pg-quick-label { font-size: 11.5px; color: var(--ink-muted); }
+  .chip-btn {
+    background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--border);
+    border-radius: 99px; padding: 5px 11px; font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  }
+  .chip-btn:hover { border-color: var(--brand); color: var(--ink-1); }
+  .pg-input {
+    width: 100%; background: var(--surface-2); color: var(--ink-1);
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font: inherit; resize: vertical;
+  }
+  .pg-input:focus { outline: 2px solid var(--brand); border-color: transparent; }
+  .pg-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .pg-decision { display: grid; gap: 10px; }
+  .pg-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding: 8px 0; border-bottom: 1px solid var(--grid); }
+  .pg-row .k { color: var(--ink-2); }
+  .pg-row .v { font-weight: 600; text-align: right; }
+  .pg-answer { font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; color: var(--ink-1); }
+  .verdict { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+  .verdict.local { background: rgba(25,158,112,.15); color: var(--good-text); }
+  .verdict.external { background: rgba(57,135,229,.15); color: var(--brand); }
+  .verdict.declass { background: rgba(201,133,0,.16); color: var(--s3); }
+
   /* ---------- mobile ---------- */
   @media (max-width: 800px) {
     .app { grid-template-columns: 1fr; }
@@ -172,6 +202,7 @@
       <span class="name">Bastion</span><span class="tag">ENTERPRISE</span>
     </div>
     <button class="nav-btn active" data-page="overview">◈ Overview</button>
+    <button class="nav-btn" data-page="playground">💬 Playground</button>
     <button class="nav-btn" data-page="departments">⊞ Departments</button>
     <button class="nav-btn" data-page="compliance">🛡 Compliance</button>
     <button class="nav-btn" data-page="gpu">▣ GPU</button>
@@ -221,6 +252,45 @@
           <thead><tr><th>Time</th><th>Tenant</th><th>Query</th><th>Classification</th><th>Engine</th><th class="num">Latency</th><th class="num">Cost</th></tr></thead>
           <tbody id="log"><tr><td colspan="7" class="empty">Waiting for traffic…</td></tr></tbody>
         </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PLAYGROUND ============ -->
+    <section id="page-playground" hidden>
+      <div class="row" style="grid-template-columns: 1fr;">
+        <div class="card">
+          <h2>Send a request as a department user</h2>
+          <div class="pg-controls">
+            <div>
+              <label for="pg-tenant">Acting as</label>
+              <select id="pg-tenant" class="pg-select"></select>
+            </div>
+            <div class="pg-quick">
+              <span class="pg-quick-label">Quick tests:</span>
+              <button class="chip-btn" data-q="What is the capital of France?">trivial → external</button>
+              <button class="chip-btn" data-q="Summarize this confidential merger agreement and its key risks.">confidential → local</button>
+              <button class="chip-btn" data-q="Translate to French: reach me at john.doe@acme.com">PII → declassified</button>
+              <button class="chip-btn" data-q="Analyze in depth, step by step, the trade-offs between leasing and buying our datacenter hardware.">hard → large model</button>
+              <button class="chip-btn" data-q="__DEPT__">department expertise</button>
+            </div>
+          </div>
+          <textarea id="pg-input" class="pg-input" rows="3" placeholder="Type a message as this department's user…"></textarea>
+          <div class="pg-actions">
+            <button class="btn" id="pg-send">Send request →</button>
+            <span id="pg-status" class="ctrl-msg"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" id="pg-result" hidden>
+        <div class="card">
+          <h2>How Bastion routed it</h2>
+          <div id="pg-decision" class="pg-decision"></div>
+        </div>
+        <div class="card">
+          <h2>Answer returned to the user</h2>
+          <div id="pg-answer" class="pg-answer"></div>
         </div>
       </div>
     </section>
@@ -325,14 +395,15 @@ function setStatus(msg) {
 }
 
 // ---------------- navigation ----------------
-const PAGES = ["overview", "departments", "compliance", "gpu"];
-const TITLES = { overview: "Overview", departments: "Departments", compliance: "Compliance", gpu: "GPU" };
+const PAGES = ["overview", "playground", "departments", "compliance", "gpu"];
+const TITLES = { overview: "Overview", playground: "Playground", departments: "Departments", compliance: "Compliance", gpu: "GPU" };
 document.querySelectorAll(".nav-btn").forEach(btn => {
   btn.onclick = () => {
     PAGES.forEach(p => document.getElementById("page-" + p).hidden = p !== btn.dataset.page);
     document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b === btn));
     document.getElementById("page-title").textContent = TITLES[btn.dataset.page];
     if (btn.dataset.page === "departments") loadTenants();
+    if (btn.dataset.page === "playground") loadPlaygroundTenants();
   };
 });
 
@@ -489,6 +560,82 @@ document.getElementById("btn-onboard").onclick = async (ev) => {
   } finally { setTimeout(() => (btn.disabled = false), 1500); }
 };
 
+// ---------------- playground (verify routing live) ----------------
+const DEPT_EXPERTISE = {
+  legal: "Review the indemnification clause in our standard vendor contract — what should I watch for?",
+  finance: "Should we lease or buy the new datacenter equipment? Give me the framework.",
+  hr: "An employee keeps arriving late. How should their manager handle it?",
+  general: "Draft a short, friendly all-hands reminder about the office move next week.",
+};
+let pgTenants = [];
+
+async function loadPlaygroundTenants() {
+  const sel = document.getElementById("pg-tenant");
+  try {
+    pgTenants = await (await fetch(url("tenants"), { cache: "no-store" })).json();
+    sel.innerHTML = pgTenants.map(t => `<option value="${t.key}" data-dept="${t.department}">${t.name}</option>`).join("");
+  } catch (e) { sel.innerHTML = `<option>failed to load tenants</option>`; }
+}
+
+document.querySelectorAll("#page-playground .chip-btn").forEach(btn => {
+  btn.onclick = () => {
+    let q = btn.dataset.q;
+    if (q === "__DEPT__") {
+      const dept = document.getElementById("pg-tenant").selectedOptions[0]?.dataset.dept || "general";
+      q = DEPT_EXPERTISE[dept] || DEPT_EXPERTISE.general;
+    }
+    document.getElementById("pg-input").value = q;
+  };
+});
+
+document.getElementById("pg-send").onclick = async () => {
+  const key = document.getElementById("pg-tenant").value;
+  const text = document.getElementById("pg-input").value.trim();
+  const status = document.getElementById("pg-status");
+  if (!text) { status.textContent = "Type a message first."; status.className = "ctrl-msg err"; return; }
+  status.textContent = "Routing through Bastion…"; status.className = "ctrl-msg";
+
+  try {
+    const res = await fetch(url("v1/chat/completions"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+      body: JSON.stringify({ messages: [{ role: "user", content: text }] }),
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.detail || res.status);
+    const b = j.bastion;
+
+    // verdict badge — the "where did it go and was it safe" summary
+    let verdict = b.declassified
+      ? `<span class="verdict declass">🛡 PII masked, safe residual sent external</span>`
+      : (b.external ? `<span class="verdict external">☁ external (non-sensitive)</span>`
+                    : `<span class="verdict local">🔒 stayed on the AMD GPU</span>`);
+
+    const eng = ENGINES[b.engine] ? ENGINES[b.engine].label : b.engine;
+    const rows = [
+      ["Verdict", verdict],
+      ["Tenant / department", `${b.tenant} · ${b.department}`],
+      ["Engine used", `<span class="pill dot" style="--c:${(ENGINES[b.engine]||{}).color||'var(--ink-muted)'}">${eng}</span>`],
+      ["Model / adapter", `<code>${j.model}</code>`],
+      ["Sensitive?", b.sensitive ? `yes — ${b.sensitivity_reasons.join(", ")}` : "no"],
+      ["Declassified?", b.declassified ? `yes — masked ${b.redactions.join(", ")}` : "no"],
+      ["Difficulty", `${b.difficulty} (${b.difficulty_reasons.join(", ")})`],
+      ["Left the box?", b.external ? "yes" : "no — data stayed local"],
+      ["Latency", `${b.latency_ms} ms`],
+      ["Cost", fmt$(b.cost_usd) + ` (vs ${fmt$(b.would_cost_elsewhere_usd)} elsewhere)`],
+    ];
+    document.getElementById("pg-decision").innerHTML = rows.map(
+      ([k, v]) => `<div class="pg-row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+    ).join("");
+    document.getElementById("pg-answer").textContent = j.choices[0].message.content;
+    document.getElementById("pg-result").hidden = false;
+    status.textContent = "✓ Routed. See the decision + answer below."; status.className = "ctrl-msg ok";
+    tick();  // refresh overview counters immediately
+  } catch (e) {
+    status.textContent = "❌ " + e; status.className = "ctrl-msg err";
+  }
+};
+
 // ---------------- compliance ----------------
 function ctrlMsg(text, kind) {
   const el = document.getElementById("ctrl-msg");
@@ -507,7 +654,7 @@ document.getElementById("btn-verify").onclick = async () => {
   } catch (e) { ctrlMsg("❌ " + e, "err"); }
 };
 
-tick(); gpuTick(); loadTenants();
+tick(); gpuTick(); loadTenants(); loadPlaygroundTenants();
 setInterval(tick, 1500);
 setInterval(gpuTick, 3000);
 </script>
