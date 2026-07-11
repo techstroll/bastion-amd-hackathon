@@ -137,7 +137,9 @@ const fmt$ = v => "$" + v.toFixed(v < 0.01 && v > 0 ? 4 : 2);
 
 async function tick() {
   let m;
-  try { m = await (await fetch("/metrics")).json(); } catch { return; }
+  // relative (no leading slash) so this works behind a path-prefixing proxy
+  // (e.g. the notebook's .../proxy/9000/ URL), not just at the domain root
+  try { m = await (await fetch("metrics")).json(); } catch { return; }
 
   document.getElementById("t-total").textContent = m.total_requests;
   document.getElementById("t-sens").textContent = m.sensitive_requests;
